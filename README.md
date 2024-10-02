@@ -1,27 +1,27 @@
-DSA-MiniSQL: A SQL-Like Command-Line Interface
+# DSA-MiniSQL: A SQL-Like Command-Line Interface
 
-Project Overview
+## Project Overview
 
-DSA-MiniSQL is a command-line interface (CLI) application that mimics SQL-like operations to interact with an in-memory database. This project is built using Java and the Picocli library. The CLI allows users to perform basic database operations such as inserting, searching, and deleting records using SQL-like statements.
+**DSA-MiniSQL** is a command-line interface (CLI) application that mimics SQL-like operations to interact with an in-memory database. This project is built using Java and the Picocli library. The CLI allows users to perform basic database operations such as inserting, searching, and deleting records using SQL-like statements.
 
-Features
+## Features
 
-	•	Insert records using INSERT INTO.
-	•	Search records using SELECT * FROM.
-	•	Delete records using DELETE FROM.
-	•	Interactive CLI for user input, similar to SQL shell.
-	•	In-memory database implementation for simplicity.
+- Insert records using `INSERT INTO`.
+- Search records using `SELECT * FROM`.
+- Delete records using `DELETE FROM`.
+- Interactive CLI for user input, similar to a SQL shell.
+- In-memory database implementation for simplicity.
 
-Technologies Used
+## Technologies Used
 
-	•	Java: The core programming language.
-	•	Maven: Build automation tool used for dependency management and project structure.
-	•	Picocli: A powerful library for building command-line interfaces in Java.
-	•	JUnit: For testing purposes (if applicable).
+- **Java**: The core programming language.
+- **Maven**: Build automation tool used for dependency management and project structure.
+- **Picocli**: A powerful library for building command-line interfaces in Java.
+- **JUnit**: For testing purposes (if applicable).
 
-Prerequisites
+## Prerequisites
 
 Before running this project, ensure you have the following installed:
 
-	•	Java 8+
-	•	Maven
+- **Java 8+**
+- **Maven**
