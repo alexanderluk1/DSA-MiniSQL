@@ -8,20 +8,14 @@ public class Engine {
         String[] tokens = query.trim().split("\\s+");
         String command = tokens[0].toUpperCase();
 
-        switch (command) {
-            case "CREATE":
-                return create(tokens);
-            case "INSERT":
-                return insert(tokens);
-            case "SELECT":
-                return select(tokens);
-            case "UPDATE":
-                return update(tokens);
-            case "DELETE":
-                return delete(tokens);
-            default:
-                return "ERROR: Unknown command";
-        }
+        return switch (command) {
+            case "CREATE" -> create(tokens);
+            case "INSERT" -> insert(tokens);
+            case "SELECT" -> select(tokens);
+            case "UPDATE" -> update(tokens);
+            case "DELETE" -> delete(tokens);
+            default -> "ERROR: Unknown command";
+        };
     }
 
     /**
@@ -108,7 +102,7 @@ public class Engine {
      * This function will handle the command syntax checks for all cases:
      *  - CREATE, INSERT, SELECT, UPDATE, DELETE
      *
-     * @param tokens - Tokens which holds the separated commands in an String array
+     * @param tokens - Tokens which holds the separated commands in a String array
      * @return a boolean if syntax is correct, false otherwise
      */
     public boolean checkCommandSyntax(String[] tokens) {
