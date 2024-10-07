@@ -1,5 +1,10 @@
 package edu.smu.smusql;
 
+import edu.smu.smusql.ErrorChecks.ErrorChecks;
+import edu.smu.smusql.ErrorChecks.TypeConverter;
+import edu.smu.smusql.enums.Messages;
+import edu.smu.smusql.model.Table;
+
 import java.util.List;
 
 public class Engine {
@@ -13,7 +18,7 @@ public class Engine {
 
         return switch (command) {
             case "CREATE" -> create(tokens[2], query);
-            case "INSERT" -> insert(tokens);
+            case "INSERT" -> insert(tokens[2], query);
             case "SELECT" -> select(tokens);
             case "UPDATE" -> update(tokens);
             case "DELETE" -> delete(tokens);
@@ -24,28 +29,48 @@ public class Engine {
     /**
      * CREATE TABLE student (id, name, age, gpa, deans_list)
      *
-     * 1. Check for command Syntax error
+     * 1. Parse Command
      * 2. Create the table with the params
      * 3. Output success
      */
     public String create (String tableName, String query) {
         List<String> parsedCommand = Parser.parseCreate(query);
-        if (!db.createTable(tableName, parsedCommand)) return String.format("Failed to Create Table, %s already exists in the database!", tableName);
-        return String.format("Created Table %s in the Database", tableName);
+
+        // Error Checks
+        if (db.doesTableExist(tableName)) return Messages.TABLE_ALREADY_EXIST.getMessage();
+
+        // Add Table to DB
+        db.createTable(tableName, parsedCommand);
+        return Messages.SUCCESS_TABLE_CREATED.getMessage();
     }
 
     /**
      * INSERT INTO student VALUES (1, John, 30, 2.4, False)
      *
-     * 0. Check for command Syntax error
+     * 0. Parse Command
      * 1. Error Handling: Check if there is a table called XX
      * 2. Error Handling: Check if params from command match params from table
      * 3. Error Handling: Check if param type matches param types from table
      * 4. Add params to table
      * 5. Output success
      */
-    public String insert(String[] tokens) {
-        return "not implemented";
+    public String insert(String tableName, String query) {
+        List<String> parsedCommand = Parser.parseCreate(query);
+
+        // Error Checks
+        if (!db.doesTableExist(tableName)) return Messages.TABLE_NOT_EXIST.getMessage();
+        if (!ErrorChecks.doesColumnsMatch(parsedCommand, db.getTable(tableName))) return Messages.COLUMN_MISMATCH.getMessage();
+
+        // Convert Parameters to their corresponding type
+        List<Object> convertedParameters = TypeConverter.convertParams(parsedCommand);
+
+        // Get the table
+        Table tableToAdd = db.getTable(tableName);
+
+        // Add record to the table
+        if (!tableToAdd.addRecordToTable(convertedParameters)) return Messages.ADD_ERROR.getMessage();
+        tableToAdd.getValuesOfSpecificColumn("name");
+        return Messages.SUCCESS_ADD_RECORD.getMessage();
     }
 
     /**

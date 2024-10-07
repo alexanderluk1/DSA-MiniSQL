@@ -15,17 +15,17 @@ public class Database {
         tables = new HashMap<>();
     }
 
-    public boolean createTable (String tableName, List<String> tableFields) {
-        if (tables.containsKey(tableName)) return false;
-
+    public void createTable (String tableName, List<String> tableFields) {
         // Create a new table to add to HashMap
         Table newTable = new Table(tableName, tableFields);
         tables.put(tableName, newTable);
-
-        return true;
     }
 
-    public Table retrieveSpecificTable(String tableName) {
+    public Table getTable(String tableName) {
         return tables.get(tableName);
+    }
+
+    public boolean doesTableExist(String tableName) {
+        return tables.containsKey(tableName);
     }
 }

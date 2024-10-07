@@ -13,7 +13,7 @@ import java.util.List;
 public class Table {
     private final String tableName;
     private final List<String> columns;
-    private final List<List<Record>> records;
+    private final List<Record> records;  // List of rows, where each Record is a row
 
     public Table(String tableName, List<String> columns) {
         this.tableName = tableName;
@@ -29,11 +29,44 @@ public class Table {
         return columns;
     }
 
-    public boolean hasColumns(String field) {
+    public boolean hasColumn(String field) {
         return columns.contains(field);
     }
 
-    public List<List<Record>> getRecords() {
+    public List<Record> getRow() {
         return records;
+    }
+
+    public int getNumberOfColumns() {
+        return columns.size();
+    }
+
+    // Add a new record (row) to the table
+    public boolean addRecordToTable(List<Object> dataToAdd) {
+        if (dataToAdd.size() != columns.size()) return false;
+        Record newRecord = new Record(dataToAdd);
+        records.add(newRecord);
+
+        System.out.println(records.size());
+
+        return true;
+    }
+
+    public void getValuesOfSpecificColumn(String columnName) {
+        for (int i = 0; i < records.size(); i++) {
+            Record row = records.get(i);
+//            Object value = row.getField(columns.indexOf(columnName));
+
+            System.out.println(row.toString());
+        }
+    }
+
+    @Override
+    public String toString() {
+        return "Table{" +
+                "tableName='" + tableName + '\'' +
+                ", columns=" + columns +
+                ", records=" + records +
+                '}';
     }
 }
