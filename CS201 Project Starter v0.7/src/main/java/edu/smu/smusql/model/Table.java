@@ -58,6 +58,7 @@ public class Table {
 //            Object value = row.getField(columns.indexOf(columnName));
 
             System.out.println(row.toString());
+            System.out.println("1");
         }
     }
 
