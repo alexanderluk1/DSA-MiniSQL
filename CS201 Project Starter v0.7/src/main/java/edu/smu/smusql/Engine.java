@@ -1,15 +1,20 @@
 package edu.smu.smusql;
 
-import java.util.Arrays;
+import java.util.List;
+
+import static edu.smu.smusql.syntax.SyntaxChecker.*;
 
 public class Engine {
+
+    // Reference to the database object
+    Database db = new Database();
 
     public String executeSQL(String query) {
         String[] tokens = query.trim().split("\\s+");
         String command = tokens[0].toUpperCase();
 
         return switch (command) {
-            case "CREATE" -> create(tokens);
+            case "CREATE" -> create(query, tokens);
             case "INSERT" -> insert(tokens);
             case "SELECT" -> select(tokens);
             case "UPDATE" -> update(tokens);
@@ -25,10 +30,16 @@ public class Engine {
      * 2. Create the table with the params
      * 3. Output success
      */
-    public String create(String[] tokens) {
-        System.out.println(Arrays.toString(tokens));
+    public String create(String query, String[] tokens) {
+        if (!isValidInsert(tokens)) return "Error Creating Table. Please check your input.";
+        List<String> parsedCommand = Parser.parseCreate(query);
+
         return "not implemented";
     }
+
+//    private List<String> processTableFields(String tableFields) {
+//        return
+//    }
 
     /**
      * INSERT INTO student VALUES (1, John, 30, 2.4, False)
@@ -96,16 +107,5 @@ public class Engine {
     public String delete(String[] tokens) {
 
         return "not implemented";
-    }
-
-    /**
-     * This function will handle the command syntax checks for all cases:
-     *  - CREATE, INSERT, SELECT, UPDATE, DELETE
-     *
-     * @param tokens - Tokens which holds the separated commands in a String array
-     * @return a boolean if syntax is correct, false otherwise
-     */
-    public boolean checkCommandSyntax(String[] tokens) {
-        return false;
     }
 }

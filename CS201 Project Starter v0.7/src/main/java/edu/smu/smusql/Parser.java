@@ -2,7 +2,9 @@ package edu.smu.smusql;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
+
 
 /*
  * This is a rudimentary parser you may want to use to parse smuSQL statements.
@@ -12,6 +14,25 @@ import java.util.List;
  * However, the sample implementation does not have a 'Parser' class.
  */
 public class Parser {
+
+    public Parser() {}
+
+    public static List<String> parseCreate(String query) {
+        int startIndex = query.indexOf('(');
+        int endIndex = query.indexOf(')');
+
+        List<String> parsedCreateCommand = new ArrayList<>();
+        parsedCreateCommand.add(query.trim().split("\\s+")[2]); // Add the tableName
+
+        // Extract the substring between the parentheses
+        if (startIndex != -1 && endIndex != -1 && startIndex < endIndex) {
+            String parameters = query.substring(startIndex + 1, endIndex);
+            // Add all the parameters
+            Collections.addAll(parsedCreateCommand, parameters.split("\\s*,\\s*"));
+        }
+
+        return parsedCreateCommand;
+    }
 
     public void parseInsert(String[] tokens) {
         String tableName = tokens[2]; // The name of the table to be inserted into.
