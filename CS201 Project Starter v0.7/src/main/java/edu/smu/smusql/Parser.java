@@ -22,7 +22,6 @@ public class Parser {
         int endIndex = query.indexOf(')');
 
         List<String> parsedCreateCommand = new ArrayList<>();
-        parsedCreateCommand.add(query.trim().split("\\s+")[2]); // Add the tableName
 
         // Extract the substring between the parentheses
         if (startIndex != -1 && endIndex != -1 && startIndex < endIndex) {
@@ -30,7 +29,6 @@ public class Parser {
             // Add all the parameters
             Collections.addAll(parsedCreateCommand, parameters.split("\\s*,\\s*"));
         }
-
         return parsedCreateCommand;
     }
 

@@ -2,8 +2,6 @@ package edu.smu.smusql;
 
 import java.util.List;
 
-import static edu.smu.smusql.syntax.SyntaxChecker.*;
-
 public class Engine {
 
     // Reference to the database object
@@ -14,7 +12,7 @@ public class Engine {
         String command = tokens[0].toUpperCase();
 
         return switch (command) {
-            case "CREATE" -> create(query, tokens);
+            case "CREATE" -> create(tokens[2], query);
             case "INSERT" -> insert(tokens);
             case "SELECT" -> select(tokens);
             case "UPDATE" -> update(tokens);
@@ -30,16 +28,11 @@ public class Engine {
      * 2. Create the table with the params
      * 3. Output success
      */
-    public String create(String query, String[] tokens) {
-        if (!isValidInsert(tokens)) return "Error Creating Table. Please check your input.";
+    public String create (String tableName, String query) {
         List<String> parsedCommand = Parser.parseCreate(query);
-
-        return "not implemented";
+        if (!db.createTable(tableName, parsedCommand)) return String.format("Failed to Create Table %s", tableName);
+        return String.format("Created Table %s in the Database", tableName);
     }
-
-//    private List<String> processTableFields(String tableFields) {
-//        return
-//    }
 
     /**
      * INSERT INTO student VALUES (1, John, 30, 2.4, False)

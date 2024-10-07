@@ -15,12 +15,13 @@ public class Database {
         tables = new HashMap<>();
     }
 
-    public boolean insertTable(String tableName, List<String> tableFields) {
+    public boolean createTable (String tableName, List<String> tableFields) {
         if (tables.containsKey(tableName)) return false;
 
         // Create a new table to add to HashMap
         Table newTable = new Table(tableName, tableFields);
         tables.put(tableName, newTable);
+
         return true;
     }
 
