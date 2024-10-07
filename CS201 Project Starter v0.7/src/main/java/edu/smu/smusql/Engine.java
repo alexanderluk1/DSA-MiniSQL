@@ -30,7 +30,7 @@ public class Engine {
      */
     public String create (String tableName, String query) {
         List<String> parsedCommand = Parser.parseCreate(query);
-        if (!db.createTable(tableName, parsedCommand)) return String.format("Failed to Create Table %s", tableName);
+        if (!db.createTable(tableName, parsedCommand)) return String.format("Failed to Create Table, %s already exists in the database!", tableName);
         return String.format("Created Table %s in the Database", tableName);
     }
 
