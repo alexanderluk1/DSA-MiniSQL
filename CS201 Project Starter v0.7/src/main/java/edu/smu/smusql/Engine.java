@@ -6,6 +6,7 @@ import edu.smu.smusql.enums.Messages;
 import edu.smu.smusql.model.Table;
 
 import java.util.List;
+import java.util.Objects;
 
 public class Engine {
 
@@ -19,7 +20,7 @@ public class Engine {
         return switch (command) {
             case "CREATE" -> create(tokens[2], query);
             case "INSERT" -> insert(tokens[2], query);
-            case "SELECT" -> select(tokens);
+            case "SELECT" -> select(tokens[3], query);
             case "UPDATE" -> update(tokens);
             case "DELETE" -> delete(tokens);
             default -> "ERROR: Unknown command";
@@ -69,7 +70,6 @@ public class Engine {
 
         // Add record to the table
         if (!tableToAdd.addRecordToTable(convertedParameters)) return Messages.ADD_ERROR.getMessage();
-        tableToAdd.getValuesOfSpecificColumn("name");
         return Messages.SUCCESS_ADD_RECORD.getMessage();
     }
 
@@ -80,14 +80,20 @@ public class Engine {
      *
      * 0. Check for command Syntax error
      * 1. Check if Table exists
-     * 2. Handle Base case
+     * 2. Handle Base case (SELECT *)
      * 3. Handle Filtering Condition(s)
      * 4. Retrieve row(s) from Data Structure
      * 5. Format and return to user
      */
-    public String select(String[] tokens) {
-        //TODO
-        return "not implemented";
+    public String select(String tableName, String query) {
+        List<String> parsedCommand = Parser.parseSelect(query);
+
+        Table tableToSelectFrom = db.getTable(tableName);
+
+        if (Objects.equals(parsedCommand.get(0), "basic")) {
+            return tableToSelectFrom.retrieveAllFromTable();
+        }
+        return tableToSelectFrom.retrieveWithCondition(parsedCommand);
     }
 
     /**

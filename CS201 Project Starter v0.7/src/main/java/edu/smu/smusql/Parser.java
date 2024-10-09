@@ -32,6 +32,46 @@ public class Parser {
         return parsedCreateCommand;
     }
 
+    /**
+     *      * SELECT * FROM student
+     *      * SELECT * FROM student WHERE gpa > 3.8 AND age < 20
+     *      * SELECT * FROM student WHERE gpa > 3.8 OR age < 20
+     */
+    public static List<String> parseSelect(String query) {
+        if (query.contains("WHERE")) return parseSelectWhere(query);
+        return parseBasicSelect(query);
+    }
+
+    public static List<String> parseBasicSelect(String query) {
+        List<String> parsedSelectCommand = new ArrayList<>();
+        parsedSelectCommand.add("basic");
+        Collections.addAll(parsedSelectCommand, query.split(" "));
+        return parsedSelectCommand;
+    }
+
+    public static List<String> parseSelectWhere(String query) {
+        List<String> parsedSelectCommand = new ArrayList<>();
+
+        Collections.addAll(parsedSelectCommand, query.split("WHERE"));
+        return parsedSelectCommand;
+    }
+
+    public static List<String> parseSelectConditions(String query) {
+        List<String> parsedConditions = new ArrayList<>();
+
+        if (query.contains("AND")) {
+            Collections.addAll(parsedConditions, query.split("AND"));
+        }
+        // Address OR condition & no condition
+        else {
+            Collections.addAll(parsedConditions, query.split("OR"));
+        }
+
+        return parsedConditions;
+    }
+
+    // --------------- DEFAULT PARSER FROM HERE ON DOWN ---------------
+
     public void parseInsert(String[] tokens) {
         String tableName = tokens[2]; // The name of the table to be inserted into.
         String valueList = queryBetweenParentheses(tokens, 4); // Get values list between parentheses

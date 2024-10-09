@@ -1,7 +1,9 @@
 package edu.smu.smusql.model;
 
-import java.util.ArrayList;
-import java.util.List;
+import edu.smu.smusql.utils.StringFormatter;
+import edu.smu.smusql.*;
+
+import java.util.*;
 
 /**
  * 1. Use the column name to get the index of the List
@@ -46,21 +48,48 @@ public class Table {
         if (dataToAdd.size() != columns.size()) return false;
         Record newRecord = new Record(dataToAdd);
         records.add(newRecord);
-
-        System.out.println(records.size());
-
         return true;
     }
 
-    public void getValuesOfSpecificColumn(String columnName) {
-        for (int i = 0; i < records.size(); i++) {
-            Record row = records.get(i);
-//            Object value = row.getField(columns.indexOf(columnName));
-
-            System.out.println(row.toString());
-            System.out.println("1");
-        }
+    public String retrieveAllFromTable() {
+        return StringFormatter.formatStringForPrintout(columns, records);
     }
+
+    // WHERE gpa > 3.8 AND age < 20
+    public String retrieveWithCondition(List<String> command) {
+        Set<Record> recordsRetrieved = new HashSet<>();
+        String conditions = command.get(1);
+
+        List<String> parsedConditions = Parser.parseSelectConditions(conditions);
+        System.out.println(parsedConditions);
+
+        // 1 Condition -> WHERE gpa > 3.8
+        if (parsedConditions.size() == 1) {
+            // Expect to get ['gpa', '>', '3.8']
+            String[] words = parsedConditions.get(0).trim().split(" ");
+
+            String column = words[0];
+            String operator = words[1];
+            String value = words[2];
+        }
+
+        // 2 Conditions
+        else {
+            // WHERE gpa > 3.8 AND age < 20
+            // WHERE gpa > 3.8 OR age < 20
+            for (String condition : parsedConditions) {
+
+            }
+        }
+        return "";
+    }
+
+//    public void getValuesOfSpecificColumn(String columnName) {
+//        for (int i = 0; i < records.size(); i++) {
+//            Record row = records.get(i);
+////            Object value = row.getField(columns.indexOf(columnName));
+//        }
+//    }
 
     @Override
     public String toString() {
