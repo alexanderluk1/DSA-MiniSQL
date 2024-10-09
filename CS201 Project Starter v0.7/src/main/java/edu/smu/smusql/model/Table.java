@@ -1,9 +1,11 @@
 package edu.smu.smusql.model;
 
+import edu.smu.smusql.ErrorChecks.TypeConverter;
 import edu.smu.smusql.utils.StringFormatter;
 import edu.smu.smusql.*;
 
 import java.util.*;
+import java.util.function.BiPredicate;
 
 /**
  * 1. Use the column name to get the index of the List
@@ -55,24 +57,37 @@ public class Table {
         return StringFormatter.formatStringForPrintout(columns, records);
     }
 
-    // WHERE gpa > 3.8 AND age < 20
     public String retrieveWithCondition(List<String> command) {
         Set<Record> recordsRetrieved = new HashSet<>();
         String conditions = command.get(1);
 
+        // Parse the conditions, e.g., "WHERE gpa > 3.8 AND age < 20"
         List<String> parsedConditions = Parser.parseSelectConditions(conditions);
         System.out.println(parsedConditions);
+
+        // Map of available operators to their corresponding comparison functions
+        Map<String, BiPredicate<Object, Object>> operatorMap = new HashMap<>();
+        operatorMap.put(">", (a, b) -> Double.parseDouble(a.toString()) > Double.parseDouble(b.toString()));
+        operatorMap.put("<", (a, b) -> Double.parseDouble(a.toString()) < Double.parseDouble(b.toString()));
+        operatorMap.put("=", Object::equals);
 
         // 1 Condition -> WHERE gpa > 3.8
         if (parsedConditions.size() == 1) {
             // Expect to get ['gpa', '>', '3.8']
             String[] words = parsedConditions.get(0).trim().split(" ");
 
-            String column = words[0];
+            String columnName = words[0];
+            int columnIndex = getIndexOfColumnName(columnName);
             String operator = words[1];
-            String value = words[2];
-        }
+            Object value = TypeConverter.parseValue(words[2]);
 
+            BiPredicate<Object, Object> comparison = operatorMap.get(operator);
+
+            for (Record record : records) {
+                Object fieldValue = record.getField(columnIndex);
+                if (comparison.test(fieldValue, value)) recordsRetrieved.add(record);
+            }
+        }
         // 2 Conditions
         else {
             // WHERE gpa > 3.8 AND age < 20
@@ -81,7 +96,11 @@ public class Table {
 
             }
         }
-        return "";
+        return StringFormatter.formatStringForPrintout(columns, new ArrayList<>(recordsRetrieved));
+    }
+
+    public int getIndexOfColumnName(String columnName) {
+        return columns.indexOf(columnName);
     }
 
 //    public void getValuesOfSpecificColumn(String columnName) {
