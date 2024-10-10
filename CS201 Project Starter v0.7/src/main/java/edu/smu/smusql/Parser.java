@@ -46,6 +46,8 @@ public class Parser {
         List<String> parsedSelectCommand = new ArrayList<>();
         parsedSelectCommand.add("basic");
         Collections.addAll(parsedSelectCommand, query.split(" "));
+
+        parsedSelectCommand.replaceAll(String::trim);
         return parsedSelectCommand;
     }
 
@@ -53,18 +55,33 @@ public class Parser {
         List<String> parsedSelectCommand = new ArrayList<>();
 
         Collections.addAll(parsedSelectCommand, query.split("WHERE"));
+
+        parsedSelectCommand.replaceAll(String::trim);
         return parsedSelectCommand;
     }
 
+    /**
+     * This method splits up all the condition by "AND" / "OR"
+     * @param query - String of command -> "gpa > 3.8 AND age < 20"
+     * @return - A List -> [gpa > 3.8, age < 20]
+     */
     public static List<String> parseSelectConditions(String query) {
         List<String> parsedConditions = new ArrayList<>();
+        String logicalOperator = null;
 
-        if (query.contains("AND")) {
-            Collections.addAll(parsedConditions, query.split("AND"));
+        if (query.contains("AND")) logicalOperator = "AND";
+        else if (query.contains("OR")) logicalOperator = "OR";
+
+        if (logicalOperator != null) {
+            String[] conditions = query.split(logicalOperator);
+
+            for (String condition : conditions) {
+                parsedConditions.add(condition.trim());
+            }
+            parsedConditions.add(logicalOperator);
         }
-        // Address OR condition & no condition
         else {
-            Collections.addAll(parsedConditions, query.split("OR"));
+            parsedConditions.add(query.trim());
         }
 
         return parsedConditions;

@@ -1,11 +1,13 @@
 package edu.smu.smusql.model;
 
 import edu.smu.smusql.ErrorChecks.TypeConverter;
+import edu.smu.smusql.utils.PredicateUtils;
 import edu.smu.smusql.utils.StringFormatter;
 import edu.smu.smusql.*;
 
 import java.util.*;
 import java.util.function.BiPredicate;
+import java.util.function.Predicate;
 
 /**
  * 1. Use the column name to get the index of the List
@@ -63,38 +65,37 @@ public class Table {
 
         // Parse the conditions, e.g., "WHERE gpa > 3.8 AND age < 20"
         List<String> parsedConditions = Parser.parseSelectConditions(conditions);
-        System.out.println(parsedConditions);
-
-        // Map of available operators to their corresponding comparison functions
-        Map<String, BiPredicate<Object, Object>> operatorMap = new HashMap<>();
-        operatorMap.put(">", (a, b) -> Double.parseDouble(a.toString()) > Double.parseDouble(b.toString()));
-        operatorMap.put("<", (a, b) -> Double.parseDouble(a.toString()) < Double.parseDouble(b.toString()));
-        operatorMap.put("=", Object::equals);
 
         // 1 Condition -> WHERE gpa > 3.8
         if (parsedConditions.size() == 1) {
             // Expect to get ['gpa', '>', '3.8']
-            String[] words = parsedConditions.get(0).trim().split(" ");
+            String[] words = parsedConditions.get(0).split(" ");
 
             String columnName = words[0];
             int columnIndex = getIndexOfColumnName(columnName);
             String operator = words[1];
-            Object value = TypeConverter.parseValue(words[2]);
+            Object inputField = TypeConverter.parseValue(words[2]);
 
-            BiPredicate<Object, Object> comparison = operatorMap.get(operator);
-
+            // Check each row against the condition
             for (Record record : records) {
-                Object fieldValue = record.getField(columnIndex);
-                if (comparison.test(fieldValue, value)) recordsRetrieved.add(record);
+                Object dbField = record.getField(columnIndex);
+                if (PredicateUtils.evaluateCondition(operator, dbField, inputField)) recordsRetrieved.add(record);
             }
         }
         // 2 Conditions
         else {
             // WHERE gpa > 3.8 AND age < 20
             // WHERE gpa > 3.8 OR age < 20
-            for (String condition : parsedConditions) {
+            String condition = parsedConditions.get(parsedConditions.size()-1);
+            parsedConditions.remove(parsedConditions.size() - 1);
 
-            }
+            System.out.println(parsedConditions);
+
+
+//            Predicate<Object> firstPredicate = parsedConditions.get(0);
+//            Predicate<Object> secondPredicate = parsedConditions.get(1);
+
+
         }
         return StringFormatter.formatStringForPrintout(columns, new ArrayList<>(recordsRetrieved));
     }
