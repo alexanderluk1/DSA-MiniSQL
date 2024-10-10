@@ -22,7 +22,12 @@ public class Main {
             String query = scanner.nextLine();
             if (query.equalsIgnoreCase("exit")) {
                 break;
-            } else if (query.equalsIgnoreCase("evaluate")) {
+            }
+            else if (query.equalsIgnoreCase("eval2")) {
+                deterministicPrepopulateTable();
+                continue;
+            }
+            else if (query.equalsIgnoreCase("evaluate")) {
                 long startTime = System.nanoTime();
                 autoEvaluate();
                 long stopTime = System.nanoTime();
@@ -90,6 +95,26 @@ public class Main {
         }
 
         System.out.println("Finished processing " + numberOfQueries + " queries.");
+    }
+
+    private static void deterministicPrepopulateTable() {
+        dbEngine.executeSQL("CREATE TABLE student (id, name, age, gpa, deans_list)");
+        System.out.println("Prepopulating students");
+
+        String[] insertCommands = {
+                "INSERT INTO student VALUES (1, 'John', 30, 2.4, False)",
+                "INSERT INTO student VALUES (2, 'Alice', 18, 3.6, True)",
+                "INSERT INTO student VALUES (3, 'Bob', 19, 3.2, False)",
+                "INSERT INTO student VALUES (4, 'Charlie', 21, 2.9, False)",
+                "INSERT INTO student VALUES (5, 'Diana', 17, 3.9, True)",
+                "INSERT INTO student VALUES (6, 'Evan', 20, 3.1, True)",
+                "INSERT INTO student VALUES (7, 'Frank', 16, 3.4, False)"
+        };
+
+        for (String insertCommand : insertCommands) {
+            dbEngine.executeSQL(insertCommand);
+        }
+        System.out.println("Student records have been prepopulated.");
     }
 
     private static void prepopulateTables(Random random) {

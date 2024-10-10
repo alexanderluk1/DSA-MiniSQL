@@ -63,40 +63,37 @@ public class Table {
         Set<Record> recordsRetrieved = new HashSet<>();
         String conditions = command.get(1);
 
-        // Parse the conditions, e.g., "WHERE gpa > 3.8 AND age < 20"
-        List<String> parsedConditions = Parser.parseSelectConditions(conditions);
+        // Parse the condition(s), e.g. "gpa > 3.8 AND age < 20"
+        // parsedCondition will include the logicalOperator at the BACK if more than 1 condition
+        List<String> parsedCondition = Parser.parseSelectConditions(conditions);
 
-        // 1 Condition -> WHERE gpa > 3.8
-        if (parsedConditions.size() == 1) {
-            // Expect to get ['gpa', '>', '3.8']
-            String[] words = parsedConditions.get(0).split(" ");
+        String logicalOperator = parsedCondition.size() > 1 ? parsedCondition.get(parsedCondition.size() - 1) : null;
 
+        if (logicalOperator != null) {
+            parsedCondition.remove(parsedCondition.size() - 1);
+        }
+
+        List<Predicate<Record>> predicates = new ArrayList<>();
+
+        // Iterate over conditions and create predicates
+        for (String condition : parsedCondition) {
+            String[] words = condition.split(" ");
             String columnName = words[0];
             int columnIndex = getIndexOfColumnName(columnName);
-            String operator = words[1];
-            Object inputField = TypeConverter.parseValue(words[2]);
-
-            // Check each row against the condition
-            for (Record record : records) {
-                Object dbField = record.getField(columnIndex);
-                if (PredicateUtils.evaluateCondition(operator, dbField, inputField)) recordsRetrieved.add(record);
-            }
+            Predicate<Record> predicate = PredicateUtils.createPredicateForCondition(condition, columnIndex, records);
+            predicates.add(predicate);
         }
-        // 2 Conditions
-        else {
-            // WHERE gpa > 3.8 AND age < 20
-            // WHERE gpa > 3.8 OR age < 20
-            String condition = parsedConditions.get(parsedConditions.size()-1);
-            parsedConditions.remove(parsedConditions.size() - 1);
 
-            System.out.println(parsedConditions);
+        // Combine predicates with AND/OR logic if there are multiple conditions
+        Predicate<Record> combinedPredicate = predicates.size() == 1
+                ? predicates.get(0)
+                : PredicateUtils.combinePredicates(predicates, logicalOperator);
 
-
-//            Predicate<Object> firstPredicate = parsedConditions.get(0);
-//            Predicate<Object> secondPredicate = parsedConditions.get(1);
-
-
+        // Filter record using combined predicates
+        for (Record record : records) {
+            if (combinedPredicate.test(record)) recordsRetrieved.add(record);
         }
+
         return StringFormatter.formatStringForPrintout(columns, new ArrayList<>(recordsRetrieved));
     }
 
@@ -104,12 +101,6 @@ public class Table {
         return columns.indexOf(columnName);
     }
 
-//    public void getValuesOfSpecificColumn(String columnName) {
-//        for (int i = 0; i < records.size(); i++) {
-//            Record row = records.get(i);
-////            Object value = row.getField(columns.indexOf(columnName));
-//        }
-//    }
 
     @Override
     public String toString() {
