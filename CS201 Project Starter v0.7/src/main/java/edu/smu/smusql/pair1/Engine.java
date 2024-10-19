@@ -1,4 +1,4 @@
-package edu.smu.smusql;
+package edu.smu.smusql.pair1;
 
 import java.util.Arrays;
 

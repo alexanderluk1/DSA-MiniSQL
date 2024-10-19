@@ -1,4 +1,4 @@
-package edu.smu.smusql;
+package edu.smu.smusql.pair1;
 
 /**
  * This will contain all the DBs
