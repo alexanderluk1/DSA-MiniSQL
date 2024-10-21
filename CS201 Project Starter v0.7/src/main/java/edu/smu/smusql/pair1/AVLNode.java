@@ -3,15 +3,15 @@ package edu.smu.smusql.pair1;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Node<K> {
+public class AVLNode<K> {
     private K key;
     private List<Integer> values;
-    private Node<K> left = null;
-    private Node<K> right = null;
-    private Node<K> parent = null;
+    private AVLNode<K> left = null;
+    private AVLNode<K> right = null;
+    private AVLNode<K> parent = null;
     private int height;
 
-    public Node(K key, Integer value) {
+    public AVLNode(K key, Integer value) {
         this.key = key;
         values = new ArrayList<>();
         values.add(value);
@@ -30,27 +30,27 @@ public class Node<K> {
         return values;
     }
 
-    public Node<K> getLeft() {
+    public AVLNode<K> getLeft() {
         return left;
     }
 
-    public void setLeft(Node<K> left) {
+    public void setLeft(AVLNode<K> left) {
         this.left = left;
     }
 
-    public Node<K> getRight() {
+    public AVLNode<K> getRight() {
         return right;
     }
 
-    public void setRight(Node<K> right) {
+    public void setRight(AVLNode<K> right) {
         this.right = right;
     }
 
-    public Node<K> getParent() {
+    public AVLNode<K> getParent() {
         return parent;
     }
 
-    public void setParent(Node<K> p) {
+    public void setParent(AVLNode<K> p) {
         parent = p;
     }
 

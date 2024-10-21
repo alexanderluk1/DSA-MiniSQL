@@ -2,19 +2,19 @@ package edu.smu.smusql.pair1;
 
 public class AVLTree<K extends Comparable<K>> {
 
-    private Node<K> root;
+    private AVLNode<K> root;
     private int size;
 
-    private int height(Node<K> node) {
+    private int height(AVLNode<K> node) {
         return node == null ? 0 : node.getHeight();
     }
 
-    private int getBalance(Node<K> node) { // > 1: left-heavy, < -1: right-heavy
+    private int getBalance(AVLNode<K> node) { // > 1: left-heavy, < -1: right-heavy
         return node == null ? 0 : height(node.getLeft()) - height(node.getRight());
     }
 
-    private Node<K> largestOnLeft(Node<K> node) {
-        Node<K> current = node;
+    private AVLNode<K> largestOnLeft(AVLNode<K> node) {
+        AVLNode<K> current = node;
         while (current.getRight() != null) {
             current = current.getRight();
         }
@@ -22,8 +22,8 @@ public class AVLTree<K extends Comparable<K>> {
     }
 
     // Set node's parent to replace node - assume children intact
-    private void updateParentChildLink(Node<K> node, Node<K> replacement) {
-        Node<K> parent = node.getParent();
+    private void updateParentChildLink(AVLNode<K> node, AVLNode<K> replacement) {
+        AVLNode<K> parent = node.getParent();
         if (parent != null) {
             if (parent.getLeft() == node) {
                 parent.setLeft(replacement);
@@ -36,9 +36,9 @@ public class AVLTree<K extends Comparable<K>> {
         }
     }
 
-    private Node<K> deleteLeafOrSingleChildNode(Node<K> node) {
+    private AVLNode<K> deleteLeafOrSingleChildNode(AVLNode<K> node) {
         // Replacement node is child of deleted node
-        Node<K> replacement = (node.getLeft() == null) ? node.getRight() : node.getLeft();
+        AVLNode<K> replacement = (node.getLeft() == null) ? node.getRight() : node.getLeft();
 
         if (node == root) {
             root = replacement;
@@ -52,7 +52,7 @@ public class AVLTree<K extends Comparable<K>> {
         return node.getParent();
     }
 
-    private Node<K> BSTDeletion(Node<K> node) {
+    private AVLNode<K> BSTDeletion(AVLNode<K> node) {
         if (node.numChildren() <= 1) {
             return deleteLeafOrSingleChildNode(node);
         } else {
@@ -60,12 +60,12 @@ public class AVLTree<K extends Comparable<K>> {
         }
     }
 
-    private Node<K> deleteTwoChildrenNode(Node<K> node) {
+    private AVLNode<K> deleteTwoChildrenNode(AVLNode<K> node) {
         // Find replacement node
-        Node<K> replacement = largestOnLeft(node.getLeft());
+        AVLNode<K> replacement = largestOnLeft(node.getLeft());
 
         // Delete the replacement node
-        Node<K> parentOfReplacement = BSTDeletion(replacement); // replacement is not root for now
+        AVLNode<K> parentOfReplacement = BSTDeletion(replacement); // replacement is not root for now
 
         // Reattach the replacement node
         if (node == root) {
@@ -79,7 +79,7 @@ public class AVLTree<K extends Comparable<K>> {
     }
 
     // Move children
-    private void replaceNode(Node<K> replacement, Node<K> node) {
+    private void replaceNode(AVLNode<K> replacement, AVLNode<K> node) {
         replacement.setLeft(node.getLeft());
         if (node.getLeft() != null) {
             node.getLeft().setParent(replacement);
@@ -91,9 +91,9 @@ public class AVLTree<K extends Comparable<K>> {
         replacement.setParent(node.getParent());
     }
 
-    private Node<K> rightRotate(Node<K> z) {
-        Node<K> y = z.getLeft();
-        Node<K> reattach = y.getRight();
+    private AVLNode<K> rightRotate(AVLNode<K> z) {
+        AVLNode<K> y = z.getLeft();
+        AVLNode<K> reattach = y.getRight();
         System.out.println("Right: z " + z + ", y " + y + ", loose " + reattach);
 
         // Rotate
@@ -109,9 +109,9 @@ public class AVLTree<K extends Comparable<K>> {
         return y; // new parent
     }
 
-    private Node<K> leftRotate(Node<K> z) {
-        Node<K> y = z.getRight();
-        Node<K> reattach = y.getLeft();
+    private AVLNode<K> leftRotate(AVLNode<K> z) {
+        AVLNode<K> y = z.getRight();
+        AVLNode<K> reattach = y.getLeft();
         System.out.println("Left: z " + z + ", y " + y + ", loose " + reattach);
 
         // Rotate
@@ -128,7 +128,7 @@ public class AVLTree<K extends Comparable<K>> {
     }
 
     // bal, > 0: go left, < 0: go right
-    private Node<K> rebalance(int bal, Node<K> node) {
+    private AVLNode<K> rebalance(int bal, AVLNode<K> node) {
         // left left - single rotation - same height
         if (bal > 1 && getBalance(node.getLeft()) >= 0) {
             return rightRotate(node);
@@ -155,13 +155,13 @@ public class AVLTree<K extends Comparable<K>> {
     }
 
     public void remove(K key, Integer id) {
-        Node<K> toDelete = get(key); // get entry where key = key
+        AVLNode<K> toDelete = get(key); // get entry where key = key
 
         toDelete.getValues().remove(id); // remove id
 
         if (toDelete.getValues().size() == 0) { // Node should no longer exist
             size--;
-            Node<K> parent = BSTDeletion(toDelete); // Return parent of Node deleted
+            AVLNode<K> parent = BSTDeletion(toDelete); // Return parent of Node deleted
 
             // Check balance of all ancestors
             boolean done = false;
@@ -187,12 +187,12 @@ public class AVLTree<K extends Comparable<K>> {
         }
     }
 
-    public Node<K> get(K key) {
+    public AVLNode<K> get(K key) {
         if (root == null) {
             return root; // Tree is empty
         }
 
-        Node<K> walk = root;
+        AVLNode<K> walk = root;
 
         while (walk != null) {
             int comp = key.compareTo(walk.getKey());
@@ -210,7 +210,7 @@ public class AVLTree<K extends Comparable<K>> {
 
     // debugging purposes
 
-    public void printTree(Node<K> node, String prefix, boolean isLeft, Node<K> parent) {
+    public void printTree(AVLNode<K> node, String prefix, boolean isLeft, AVLNode<K> parent) {
         if (node != null) {
             // Print current node with its parent
             System.out.print(prefix + (isLeft ? "├ L: " : "└ R: ") + node + " (Parent: " + (parent != null ? parent : "null") + ")\n");
@@ -238,12 +238,12 @@ public class AVLTree<K extends Comparable<K>> {
     public static void main(String[] args) {
         // test();
         AVLTree<Integer> ageTree = new AVLTree<>();
-        Node<Integer> rootNode = new Node<Integer>(18, 1);
+        AVLNode<Integer> rootNode = new AVLNode<Integer>(18, 1);
         rootNode.getValues().add(6);
-        Node<Integer> leftNode = new Node<Integer>(14, 2);
-        Node<Integer> rightNode = new Node<Integer>(22, 3);
-        Node<Integer> rightRightChild = new Node<Integer>(26, 4);
-        Node<Integer> rightLeftChild = new Node<Integer>(20, 5);
+        AVLNode<Integer> leftNode = new AVLNode<Integer>(14, 2);
+        AVLNode<Integer> rightNode = new AVLNode<Integer>(22, 3);
+        AVLNode<Integer> rightRightChild = new AVLNode<Integer>(26, 4);
+        AVLNode<Integer> rightLeftChild = new AVLNode<Integer>(20, 5);
         ageTree.root = rootNode;
         leftNode.setParent(rootNode);
         rootNode.setLeft(leftNode);
@@ -274,8 +274,8 @@ public class AVLTree<K extends Comparable<K>> {
         ageTree.print();
     }
 
-    public static void testBSTDeletion(AVLTree<Integer> tree, Node<Integer> root, Node<Integer> noChild,
-            Node<Integer> oneChild) {
+    public static void testBSTDeletion(AVLTree<Integer> tree, AVLNode<Integer> root, AVLNode<Integer> noChild,
+            AVLNode<Integer> oneChild) {
         tree.BSTDeletion(root);
         System.out.println("Delete Root");
         tree.print();
