@@ -59,13 +59,13 @@ public class Table {
         return StringFormatter.formatStringForPrintout(columns, records);
     }
 
-    public String retrieveWithCondition(List<String> command) {
+    public String retrieveWithCondition(List<String> command) { // eg. of command : ["SELECT * FROM student", "gpa > 3.8"]
         Set<Record> recordsRetrieved = new HashSet<>();
-        String conditions = command.get(1);
+        String conditions = command.get(1); // get the command after the WHERE clause 
 
         // Parse the condition(s), e.g. "gpa > 3.8 AND age < 20"
         // parsedCondition will include the logicalOperator at the BACK if more than 1 condition
-        List<String> parsedCondition = Parser.parseSelectConditions(conditions);
+        List<String> parsedCondition = Parser.parseConditions(conditions);
 
         String logicalOperator = parsedCondition.size() > 1 ? parsedCondition.get(parsedCondition.size() - 1) : null;
 
@@ -95,6 +95,49 @@ public class Table {
         }
 
         return StringFormatter.formatStringForPrintout(columns, new ArrayList<>(recordsRetrieved));
+    }
+
+    public int updateRows(String col, String newValue, String whereClauseConditions) {
+        int updatedRowCount = 0;
+
+        int colIndex = getIndexOfColumnName(col);
+        List<String> parsedConditions = Parser.parseConditions(whereClauseConditions);
+
+        String logicalOperator = parsedConditions.size() > 1 ? parsedConditions.get(parsedConditions.size() - 1) : null;
+        if (logicalOperator != null) {
+            parsedConditions.remove(parsedConditions.size() - 1); // Remove the logical operator from conditions
+        }
+
+        List<Predicate<Record>> predicates = new ArrayList<>();
+
+        // Iterate over parsed conditions and create predicates for each condition
+        for (String condition : parsedConditions) {
+            String[] conditionParts = condition.split(" ");
+            String conditionColumn = conditionParts[0];  // Column name in condition
+            int conditionColIndex = getIndexOfColumnName(conditionColumn); // Index of column in condition
+
+            // Create the predicate for this condition
+            Predicate<Record> predicate = PredicateUtils.createPredicateForCondition(condition, conditionColIndex, records);
+            predicates.add(predicate);
+        }
+
+        // Combine the predicates (if multiple) using AND/OR logic
+        Predicate<Record> combinedPredicate = predicates.size() == 1
+                ? predicates.get(0)
+                : PredicateUtils.combinePredicates(predicates, logicalOperator);
+
+        // Loop through the records, apply the combined predicate, and update the rows that match
+        for (Record record : records) {
+            if (combinedPredicate.test(record)) {
+                // Update the field at colIndex with newValue
+                record.setField(colIndex, newValue);
+                updatedRowCount++;
+            }
+        }
+
+        return updatedRowCount;  // Return the number of updated rows
+
+
     }
 
     public int getIndexOfColumnName(String columnName) {

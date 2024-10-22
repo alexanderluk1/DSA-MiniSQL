@@ -21,8 +21,10 @@ public class Engine {
             case "CREATE" -> create(tokens[2], query);
             case "INSERT" -> insert(tokens[2], query);
             case "SELECT" -> select(tokens[3], query);
-            case "UPDATE" -> update(tokens);
-            case "DELETE" -> delete(tokens);
+// (reiwen)            
+            case "UPDATE" -> update(tokens[1], query);
+            case "DELETE" -> delete(tokens[2], query);
+
             default -> "ERROR: Unknown command";
         };
     }
@@ -93,7 +95,7 @@ public class Engine {
         if (Objects.equals(parsedCommand.get(0), "basic")) {
             return tableToSelectFrom.retrieveAllFromTable();
         }
-        return tableToSelectFrom.retrieveWithCondition(parsedCommand);
+        return tableToSelectFrom.retrieveWithCondition(parsedCommand); // eg. ["SELECT * FROM student", "gpa > 3.8"]
     }
 
     /**
@@ -107,9 +109,32 @@ public class Engine {
      * 4. Update row(s)
      * 5. Return success message "Updated 3 rows"
      */
-    public String update(String[] tokens) {
-        //TODO
-        return "not implemented";
+    public String update(String tableName , String query) {
+
+        // parse 
+        List<String> parsedUpdate = Parser.updateParser(query);
+
+        // column name to update
+        String colName = parsedUpdate.get(1);
+        String newValue = parsedUpdate.get(2);
+        String whereClauseConditions = parsedUpdate.get(3);
+
+        // Check if table exist 
+        if (!db.doesTableExist(tableName)) {
+            return Messages.TABLE_NOT_EXIST.getMessage();
+        } 
+
+        // get the table
+        Table tableToUpdate = db.getTable(tableName);
+        // Check if valid column
+        if (!tableToUpdate.hasColumn(colName)) {
+            return Messages.COLUMN_NOT_FOUND.getMessage();
+        }
+
+        // apply the update
+        int updatedRowsNum = tableToUpdate.updateRows(colName,newValue, whereClauseConditions);
+
+        return updatedRowsNum + "row(s) updated successfully." ;
     }
 
     /**
@@ -128,7 +153,7 @@ public class Engine {
      *
      * 4. Return success message
      */
-    public String delete(String[] tokens) {
+    public String delete(String tableName, String query) {
 
         return "not implemented";
     }

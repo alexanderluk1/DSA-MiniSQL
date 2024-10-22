@@ -44,7 +44,11 @@ public class Parser {
         return parseBasicSelect(query);
     }
 
-    public static List<String> parseBasicSelect(String query) {
+    // helper method for parseSelect
+    /* This helper method adds a 'basic' flag as the first element of the list 
+     * eg. ["basic", "SELECT", "*", "FROM", "student"]
+    */
+    private static List<String> parseBasicSelect(String query) {
         List<String> parsedSelectCommand = new ArrayList<>();
         parsedSelectCommand.add("basic");
         Collections.addAll(parsedSelectCommand, query.split(" "));
@@ -53,7 +57,15 @@ public class Parser {
         return parsedSelectCommand;
     }
 
-    public static List<String> parseSelectWhere(String query) {
+    // helper method for parseSelect
+    /*
+     * This method helps to break down the query into 2 main parts 
+     * (1) before the WHERE clause , and
+     * (2) after the WHERE clause
+     * 
+     * eg. ["SELECT * FROM student", "gpa > 3.8"]
+     */
+    private static List<String> parseSelectWhere(String query) {
         List<String> parsedSelectCommand = new ArrayList<>();
 
         Collections.addAll(parsedSelectCommand, query.split("WHERE"));
@@ -62,31 +74,65 @@ public class Parser {
         return parsedSelectCommand;
     }
 
+
+    // [ tableName | columnName | newValue | null OR conditionString ]
+    public static List<String> updateParser( String query ) {
+        List<String> parsedUpdate = new ArrayList<>();
+
+        // Split by tokens 
+        String[] tokens = query.trim().split("\\s+");
+
+        String tableName = tokens[1];
+        parsedUpdate.add(tableName); 
+
+        String setColumn = tokens[3];
+        String setNewValue = tokens[5];
+        parsedUpdate.add(setColumn);
+        parsedUpdate.add(setNewValue);
+
+        // if query contains WHERE clause 
+        if ( query.contains("WHERE") ) {
+            String whereClauseConditions = query.split("WHERE")[1].trim();
+            // parse the conditions 
+            parsedUpdate.add(whereClauseConditions);
+        } else {
+            parsedUpdate.add(null); // to indicate that there is not WHERE clause 
+        }
+
+        return parsedUpdate;
+
+    }
+
     /**
      * This method splits up all the condition by "AND" / "OR"
      * @param query - String of command -> "gpa > 3.8 AND age < 20"
      * @return - A List -> [gpa > 3.8, age < 20]
      */
-    public static List<String> parseSelectConditions(String query) {
-        List<String> parsedConditions = new ArrayList<>();
+
+
+    /* This method returns the individual conditions (eg. "gpa > 3.8")  as long as there is a WHERE clause */
+    public static List<String> parseConditions(String query /* after WHERE clause */ ) {
+        List<String> conditions = new ArrayList<>();
+
         String logicalOperator = null;
 
+        // assumption query only has one AND | OR 
         if (query.contains("AND")) logicalOperator = "AND";
         else if (query.contains("OR")) logicalOperator = "OR";
 
         if (logicalOperator != null) {
-            String[] conditions = query.split(logicalOperator);
+            String[] conditionParts = query.split(logicalOperator);
 
-            for (String condition : conditions) {
-                parsedConditions.add(condition.trim());
+            for (String part : conditionParts) {
+                conditions.add(part.trim());
             }
-            parsedConditions.add(logicalOperator);
+            conditions.add(logicalOperator);
         }
         else {
-            parsedConditions.add(query.trim());
+            conditions.add(query.trim());
         }
 
-        return parsedConditions;
+        return conditions;
     }
 
     // --------------- DEFAULT PARSER FROM HERE ON DOWN ---------------
