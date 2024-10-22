@@ -1,17 +1,23 @@
-package edu.smu.smusql.pair1;
+package edu.smu.smusql;
 
 import java.util.Arrays;
+import java.util.List;
+
+import edu.smu.smusql.ErrorChecks.TypeConverter;
+import edu.smu.smusql.pair1.Table;
 
 public class Engine {
+
+    Database db = new Database();
 
     public String executeSQL(String query) {
         String[] tokens = query.trim().split("\\s+");
         String command = tokens[0].toUpperCase();
 
         return switch (command) {
-            case "CREATE" -> create(tokens);
-            case "INSERT" -> insert(tokens);
-            case "SELECT" -> select(tokens);
+            case "CREATE" -> create(tokens[2], query);
+            case "INSERT" -> insert(tokens[2], query);
+            case "SELECT" -> select(tokens[3], query);
             case "UPDATE" -> update(tokens);
             case "DELETE" -> delete(tokens);
             default -> "ERROR: Unknown command";
@@ -25,9 +31,10 @@ public class Engine {
      * 2. Create the table with the params
      * 3. Output success
      */
-    public String create(String[] tokens) {
-        System.out.println(Arrays.toString(tokens));
-        return "not implemented";
+    public String create(String tableName, String query) {
+        List<String> parsedCommand = Parser.parseCreate(query);
+        db.createTable(tableName, parsedCommand);
+        return "table created";
     }
 
     /**
@@ -40,8 +47,23 @@ public class Engine {
      * 4. Add params to table
      * 5. Output success
      */
-    public String insert(String[] tokens) {
-        return "not implemented";
+    public String insert(String tableName, String query) {
+        List<String> parsedCommand = Parser.parseCreate(query);
+
+        // Error Checks
+        // if (!db.doesTableExist(tableName)) return Messages.TABLE_NOT_EXIST.getMessage();
+        // if (!ErrorChecks.doesColumnsMatch(parsedCommand, db.getTable(tableName))) return Messages.COLUMN_MISMATCH.getMessage();
+
+        // Convert Parameters to their corresponding type
+        List<Object> convertedParameters = TypeConverter.convertParams(parsedCommand);
+
+        // Get the table
+        Table tableToAdd = db.getTable(tableName);
+
+        // Add record to the table
+        tableToAdd.insertRecord(convertedParameters);
+        tableToAdd.print();
+        return "success";
     }
 
     /**
@@ -56,7 +78,7 @@ public class Engine {
      * 4. Retrieve row(s) from Data Structure
      * 5. Format and return to user
      */
-    public String select(String[] tokens) {
+    public String select(String tableName, String query) {
         //TODO
         return "not implemented";
     }

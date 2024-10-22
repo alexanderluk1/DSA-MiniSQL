@@ -12,6 +12,14 @@ public class HashTable {
         this.MAXLOAD = 0.75;
     }
 
+    public int getSize() {
+        return size;
+    }
+
+    public ListNode getStartOfBucket(int i) {
+        return buckets[i];
+    }
+
     // index in bukets where record with key is stored
     private int hash(int id) {
         return id % size; // Basic hash function
@@ -108,13 +116,13 @@ public class HashTable {
     public static void main(String[] args) {
         HashTable ht = new HashTable(1);
         // ht.insert(new Record(1, "AB", 18, 3.2, true));
-        ht.put(new Record(4, "B", 19, 3.4, false));
+        // ht.put(new Record(4, "B", 19, 3.4, false));
         // ht.insert(new Record(3, "B", 19, 3.4, false));
-        ht.put(new Record(8, "B", 19, 3.4, false));
+        // ht.put(new Record(8, "B", 19, 3.4, false));
         // ht.insert(new Record(5, "B", 19, 3.4, false));
-        ht.put(new Record(12, "B", 19, 3.4, false));
-        ht.put(new Record(20, "B", 19, 3.4, false));
-        ht.put(new Record(16, "B", 19, 3.4, false));
+        // ht.put(new Record(12, "B", 19, 3.4, false));
+        // ht.put(new Record(20, "B", 19, 3.4, false));
+        // ht.put(new Record(16, "B", 19, 3.4, false));
         // ht.insert(new Record(9, "B", 19, 3.4, false));
         // ht.insert(new Record(10, "B", 19, 3.4, false));
         // ht.insert(new Record(12, "B", 19, 3.4, false));

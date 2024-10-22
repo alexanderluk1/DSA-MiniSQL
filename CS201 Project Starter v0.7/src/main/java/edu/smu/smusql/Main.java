@@ -2,8 +2,6 @@ package edu.smu.smusql;
 
 import java.util.*;
 
-import edu.smu.smusql.pair1.Engine;
-
 // @author ziyuanliu@smu.edu.sg
 
 public class Main {
@@ -47,7 +45,7 @@ public class Main {
     public static void autoEvaluate() {
 
         // Set the number of queries to execute
-        int numberOfQueries = 1000000;
+        int numberOfQueries = 1; // 1000000 - given number
 
         // Create tables
         dbEngine.executeSQL("CREATE TABLE users (id, name, age, city)");

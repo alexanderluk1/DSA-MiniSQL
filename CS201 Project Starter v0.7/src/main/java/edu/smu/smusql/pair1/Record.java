@@ -1,68 +1,57 @@
 package edu.smu.smusql.pair1;
 
+import java.util.HashMap;
+import java.util.Map;
+
 public class Record {
     
     private Integer id;
-    private String name;
-    private Integer age;
-    private Double gpa;
-    private Boolean deansList;
+    private HashMap<String, Object> columns; // Column name and its value
 
-    public Record(Integer id, String name, Integer age, Double gpa, Boolean deansList) {
+    public Record(Integer id) {
         this.id = id;
-        this.name = name;
-        this.age = age;
-        this.gpa = gpa;
-        this.deansList = deansList;
+        this.columns = new HashMap<>();
     }
     
     public Integer getId() {
         return id;
     }
 
-    public void setId(Integer id) {
-        this.id = id;
+    public void setColumn(String columnName, Object value){
+        columns.put(columnName, value);
     }
 
-    public String getName() {
-        return name;
+    public Object getColumn(String columnName) {
+        return columns.get(columnName);
     }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public Integer getAge() {
-        return age;
-    }
-
-    public void setAge(Integer age) {
-        this.age = age;
-    }
-
-    public Double getGpa() {
-        return gpa;
-    }
-
-    public void setGpa(Double gpa) {
-        this.gpa = gpa;
-    }
-
-    public Boolean getDeansList() {
-        return deansList;
-    }
-
-    public void setDeansList(Boolean deansList) {
-        this.deansList = deansList;
-    }
-
-    @Override
-    public String toString() {
-        return id + ", " + name;
-    }    
 
     @Override
     public int hashCode() {
         return id;
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append(String.format("| %-10d |", id));
+
+        // Add each column's value to the string
+        for (Map.Entry<String, Object> entry : columns.entrySet()) {
+            sb.append(String.format(" %-20s |", entry.getValue()));
+        }
+
+        return sb.toString();
+    }
+
+    public static void printHeader(Record record) {
+        System.out.print("| ID         |");
+
+        // Print the dynamic column names based on the record
+        for (String columnName : record.columns.keySet()) {
+            System.out.printf(" %-20s |", columnName);
+        }
+        
+        System.out.println();
+        System.out.println("|------------|---------------------|");
     }
 }

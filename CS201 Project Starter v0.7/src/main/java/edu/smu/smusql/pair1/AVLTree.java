@@ -13,6 +13,10 @@ public class AVLTree<K extends Comparable<K>> {
         return node == null ? 0 : height(node.getLeft()) - height(node.getRight());
     }
 
+    public void insert(K key, int id) {
+        return;
+    }
+
     private AVLNode<K> largestOnLeft(AVLNode<K> node) {
         AVLNode<K> current = node;
         while (current.getRight() != null) {

@@ -2,6 +2,7 @@ package edu.smu.smusql;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 /*
@@ -12,6 +13,75 @@ import java.util.List;
  * However, the sample implementation does not have a 'Parser' class.
  */
 public class Parser {
+    public static List<String> parseCreate(String query) {
+        int startIndex = query.indexOf('(');
+        int endIndex = query.indexOf(')');
+
+        List<String> parsedCreateCommand = new ArrayList<>();
+
+        // Extract the substring between the parentheses
+        if (startIndex != -1 && endIndex != -1 && startIndex < endIndex) {
+            String parameters = query.substring(startIndex + 1, endIndex);
+            // Add all the parameters
+            Collections.addAll(parsedCreateCommand, parameters.split("\\s*,\\s*"));
+        }
+        return parsedCreateCommand;
+    }
+
+    /**
+     *      * SELECT * FROM student
+     *      * SELECT * FROM student WHERE gpa > 3.8 AND age < 20
+     *      * SELECT * FROM student WHERE gpa > 3.8 OR age < 20
+     */
+    public static List<String> parseSelect(String query) {
+        if (query.contains("WHERE")) return parseSelectWhere(query);
+        return parseBasicSelect(query);
+    }
+
+    public static List<String> parseBasicSelect(String query) {
+        List<String> parsedSelectCommand = new ArrayList<>();
+        parsedSelectCommand.add("basic");
+        Collections.addAll(parsedSelectCommand, query.split(" "));
+
+        parsedSelectCommand.replaceAll(String::trim);
+        return parsedSelectCommand;
+    }
+
+    public static List<String> parseSelectWhere(String query) {
+        List<String> parsedSelectCommand = new ArrayList<>();
+
+        Collections.addAll(parsedSelectCommand, query.split("WHERE"));
+
+        parsedSelectCommand.replaceAll(String::trim);
+        return parsedSelectCommand;
+    }
+
+    /**
+     * This method splits up all the condition by "AND" / "OR"
+     * @param query - String of command -> "gpa > 3.8 AND age < 20"
+     * @return - A List -> [gpa > 3.8, age < 20]
+     */
+    public static List<String> parseSelectConditions(String query) {
+        List<String> parsedConditions = new ArrayList<>();
+        String logicalOperator = null;
+
+        if (query.contains("AND")) logicalOperator = "AND";
+        else if (query.contains("OR")) logicalOperator = "OR";
+
+        if (logicalOperator != null) {
+            String[] conditions = query.split(logicalOperator);
+
+            for (String condition : conditions) {
+                parsedConditions.add(condition.trim());
+            }
+            parsedConditions.add(logicalOperator);
+        }
+        else {
+            parsedConditions.add(query.trim());
+        }
+
+        return parsedConditions;
+    }
 
     public void parseInsert(String[] tokens) {
         String tableName = tokens[2]; // The name of the table to be inserted into.
