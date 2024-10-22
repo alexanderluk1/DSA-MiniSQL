@@ -103,6 +103,22 @@ public class Parser {
 
     }
 
+    public static List<String> parseDelete ( String query ) {
+        List<String> parsedDelete = new ArrayList<>();
+        String[] tokens = query.trim().split("\\s+");
+
+        String tableName = tokens[2];
+        parsedDelete.add(tableName);
+
+        if (query.contains("WHERE")) {
+            String whereClauseConditions = query.split("WHERE")[1].trim();
+            parsedDelete.add(whereClauseConditions);
+        } else {
+            parsedDelete.add(null);  // No WHERE clause
+        }
+        return parsedDelete;
+    }
+
     /**
      * This method splits up all the condition by "AND" / "OR"
      * @param query - String of command -> "gpa > 3.8 AND age < 20"

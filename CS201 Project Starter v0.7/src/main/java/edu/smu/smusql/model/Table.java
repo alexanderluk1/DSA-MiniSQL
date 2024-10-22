@@ -136,9 +136,52 @@ public class Table {
         }
 
         return updatedRowCount;  // Return the number of updated rows
-
-
     }
+
+    public int deleteRows(String whereClauseConditions) {
+        int deletedRowCount = 0;
+    
+        // Parse the conditions
+        List<String> parsedConditions = Parser.parseConditions(whereClauseConditions);
+    
+        String logicalOperator = parsedConditions.size() > 1 ? parsedConditions.get(parsedConditions.size() - 1) : null;
+        if (logicalOperator != null) {
+            parsedConditions.remove(parsedConditions.size() - 1); // Remove the logical operator from conditions
+        }
+    
+        List<Predicate<Record>> predicates = new ArrayList<>();
+    
+        // Create predicates for each condition
+        for (String condition : parsedConditions) {
+            String[] conditionParts = condition.split(" ");
+            String conditionColumn = conditionParts[0];  // Column name in the condition
+            int conditionColIndex = getIndexOfColumnName(conditionColumn); // Index of column in condition
+    
+            // Create the predicate for this condition
+            Predicate<Record> predicate = PredicateUtils.createPredicateForCondition(condition, conditionColIndex, records);
+            predicates.add(predicate);
+        }
+    
+        // Combine the predicates (if multiple) using AND/OR logic
+        Predicate<Record> combinedPredicate = predicates.size() == 1
+                ? predicates.get(0)
+                : PredicateUtils.combinePredicates(predicates, logicalOperator);
+    
+        // Loop through the records, apply the combined predicate, and delete the rows that match
+        Iterator<Record> iterator = records.iterator();
+        while (iterator.hasNext()) {
+            Record record = iterator.next();
+            if (combinedPredicate.test(record)) {
+                iterator.remove();  // Remove the matching record
+                deletedRowCount++;
+            }
+        }
+    
+        return deletedRowCount;  // Return the number of deleted rows
+    }
+    
+
+
 
     public int getIndexOfColumnName(String columnName) {
         return columns.indexOf(columnName);

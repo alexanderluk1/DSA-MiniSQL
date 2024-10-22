@@ -21,7 +21,7 @@ public class Engine {
             case "CREATE" -> create(tokens[2], query);
             case "INSERT" -> insert(tokens[2], query);
             case "SELECT" -> select(tokens[3], query);
-// (reiwen)            
+       
             case "UPDATE" -> update(tokens[1], query);
             case "DELETE" -> delete(tokens[2], query);
 
@@ -155,6 +155,16 @@ public class Engine {
      */
     public String delete(String tableName, String query) {
 
-        return "not implemented";
+        List<String> parsedDelete = Parser.parseDelete(query);
+        String whereClauseConditions = parsedDelete.get(1);
+
+        // Checks
+        if (!db.doesTableExist(tableName)) {
+            return Messages.TABLE_NOT_EXIST.getMessage();
+        } 
+        Table tableToDeleteFrom = db.getTable(tableName);
+
+        int deletedRowsNum = tableToDeleteFrom.deleteRows(whereClauseConditions);
+        return deletedRowsNum + " row(s) deleted successfully.";
     }
 }
