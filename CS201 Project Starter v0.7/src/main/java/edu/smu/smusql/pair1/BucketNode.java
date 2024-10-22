@@ -1,10 +1,10 @@
 package edu.smu.smusql.pair1;
 
-public class ListNode {
+public class BucketNode {
     private Record record;
-    private ListNode next;
+    private BucketNode next;
 
-    public ListNode(Record record) {
+    public BucketNode(Record record) {
         this.record = record;
         this.next = null;
     }
@@ -17,11 +17,11 @@ public class ListNode {
         this.record = record;
     }
 
-    public ListNode getNext() {
+    public BucketNode getNext() {
         return next;
     }
 
-    public void setNext(ListNode next) {
+    public void setNext(BucketNode next) {
         this.next = next;
     }    
 }

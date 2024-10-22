@@ -1,14 +1,14 @@
 package edu.smu.smusql.pair1;
 
 public class HashTable {
-    private ListNode[] buckets;
+    private BucketNode[] buckets;
     private int size;
     private int numElements;
     private final double MAXLOAD;
 
     public HashTable(int capacity) {
         this.size = capacity;
-        this.buckets = new ListNode[capacity];
+        this.buckets = new BucketNode[capacity];
         this.MAXLOAD = 0.75;
     }
 
@@ -16,7 +16,7 @@ public class HashTable {
         return size;
     }
 
-    public ListNode getStartOfBucket(int i) {
+    public BucketNode getStartOfBucket(int i) {
         return buckets[i];
     }
 
@@ -30,7 +30,7 @@ public class HashTable {
     }
 
     private void addToBucket(int index, Record record) {
-        ListNode newNode = new ListNode(record); // Create Node
+        BucketNode newNode = new BucketNode(record); // Create Node
         newNode.setNext(buckets[index]); // Node points to top of bucket
         buckets[index] = newNode; // newNode becomes top of bucket
     }
@@ -45,9 +45,9 @@ public class HashTable {
         numElements++;
     }
 
-    public Record search(int id) {
+    public Record get(int id) {
         int index = hash(id);
-        ListNode current = buckets[index];
+        BucketNode current = buckets[index];
         while (current != null) {
             if (current.getRecord().getId() == id) {
                 return current.getRecord(); // Found the record
@@ -59,8 +59,8 @@ public class HashTable {
 
     public void remove(int id) {
         int index = hash(id);
-        ListNode current = buckets[index];
-        ListNode prev = null;
+        BucketNode current = buckets[index];
+        BucketNode prev = null;
 
         while (current != null) {
             if (current.getRecord().getId() == id) { // finding record in bucket
@@ -85,12 +85,12 @@ public class HashTable {
     }
 
     public void resize(int newCapacity) {
-        ListNode[] newBuckets = new ListNode[newCapacity];
-        for (ListNode bucket : buckets) {
-            ListNode current = bucket;
+        BucketNode[] newBuckets = new BucketNode[newCapacity];
+        for (BucketNode bucket : buckets) {
+            BucketNode current = bucket;
             while (current != null) {
                 int newIndex = current.getRecord().getId() % newCapacity;
-                ListNode next = current.getNext();
+                BucketNode next = current.getNext();
                 current.setNext(newBuckets[newIndex]);
                 newBuckets[newIndex] = current;
                 current = next; 
@@ -103,7 +103,7 @@ public class HashTable {
     // debugging purposes
     public void print() {
         for (int i = 0; i < size; i++) {
-            ListNode current = buckets[i];
+            BucketNode current = buckets[i];
             System.out.print("Bucket " + i + ": ");
             while (current != null) {
                 System.out.print(current.getRecord() + " -> ");
@@ -111,28 +111,5 @@ public class HashTable {
             }
             System.out.println("null");
         }
-    }
-
-    public static void main(String[] args) {
-        HashTable ht = new HashTable(1);
-        // ht.insert(new Record(1, "AB", 18, 3.2, true));
-        // ht.put(new Record(4, "B", 19, 3.4, false));
-        // ht.insert(new Record(3, "B", 19, 3.4, false));
-        // ht.put(new Record(8, "B", 19, 3.4, false));
-        // ht.insert(new Record(5, "B", 19, 3.4, false));
-        // ht.put(new Record(12, "B", 19, 3.4, false));
-        // ht.put(new Record(20, "B", 19, 3.4, false));
-        // ht.put(new Record(16, "B", 19, 3.4, false));
-        // ht.insert(new Record(9, "B", 19, 3.4, false));
-        // ht.insert(new Record(10, "B", 19, 3.4, false));
-        // ht.insert(new Record(12, "B", 19, 3.4, false));
-        // ht.insert(new Record(16, "B", 19, 3.4, false));
-
-        // ht.remove(1);
-        // ht.remove(3);
-        // ht.remove(4);
-        // ht.remove(5);
-        // ht.remove(9);
-        ht.print();
     }
 }

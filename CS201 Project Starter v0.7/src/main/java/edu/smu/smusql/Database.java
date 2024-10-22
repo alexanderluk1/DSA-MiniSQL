@@ -17,10 +17,10 @@ public class Database {
 
     public void createTable(String tableName, List<String> columns) {
         Table table = new Table(tableName);
+        System.out.println("Col" + columns);
         for (String col : columns) {
             table.addColumn(col);
         }
-        table.print();
         tables.put(tableName, table);
     }
 

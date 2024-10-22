@@ -1,6 +1,6 @@
 package edu.smu.smusql.pair1;
 
-public class AVLTree<K extends Comparable<K>> {
+public class AVLTree<K> {
 
     private AVLNode<K> root;
     private int size;
@@ -193,19 +193,22 @@ public class AVLTree<K extends Comparable<K>> {
 
     public AVLNode<K> get(K key) {
         if (root == null) {
-            return root; // Tree is empty
+            return null; // Tree is empty
         }
 
         AVLNode<K> walk = root;
 
         while (walk != null) {
-            int comp = key.compareTo(walk.getKey());
-            if (comp == 0) {
-                return walk;
-            } else if (comp > 0) {
-                walk = root.getRight();
-            } else {
-                walk = root.getLeft();
+            if (key instanceof Comparable && walk.getKey() instanceof Comparable) {
+                Comparable<K> k = (Comparable<K>) key;
+                int comp = k.compareTo(walk.getKey());
+                if (comp == 0) {
+                    return walk;
+                } else if (comp > 0) {
+                    walk = walk.getRight();
+                } else {
+                    walk = walk.getLeft();
+                }
             }
         }
 
@@ -217,81 +220,29 @@ public class AVLTree<K extends Comparable<K>> {
     public void printTree(AVLNode<K> node, String prefix, boolean isLeft, AVLNode<K> parent) {
         if (node != null) {
             // Print current node with its parent
-            System.out.print(prefix + (isLeft ? "├ L: " : "└ R: ") + node + " (Parent: " + (parent != null ? parent : "null") + ")\n");
-            
+            System.out.print(prefix + (isLeft ? "├ L: " : "└ R: ") + node + " (Parent: "
+                    + (parent != null ? parent : "null") + ")\n");
+
             // Prepare the prefix for the next level
             String newPrefix = prefix + (isLeft ? "│   " : "    ");
-            
+
             // Recursively print the left and right children
             printTree(node.getLeft(), newPrefix, true, node);
             printTree(node.getRight(), newPrefix, false, node);
         }
     }
-    
+
     public void print() {
         if (root != null) {
             System.out.println("Root: " + root);
-            printTree(root.getLeft(), "",true, root);
+            printTree(root.getLeft(), "", true, root);
             printTree(root.getRight(), "", false, root);
         } else {
             System.out.println("Tree is empty.");
         }
     }
-    
 
     public static void main(String[] args) {
-        // test();
-        AVLTree<Integer> ageTree = new AVLTree<>();
-        AVLNode<Integer> rootNode = new AVLNode<Integer>(18, 1);
-        rootNode.getValues().add(6);
-        AVLNode<Integer> leftNode = new AVLNode<Integer>(14, 2);
-        AVLNode<Integer> rightNode = new AVLNode<Integer>(22, 3);
-        AVLNode<Integer> rightRightChild = new AVLNode<Integer>(26, 4);
-        AVLNode<Integer> rightLeftChild = new AVLNode<Integer>(20, 5);
-        ageTree.root = rootNode;
-        leftNode.setParent(rootNode);
-        rootNode.setLeft(leftNode);
-        rootNode.setRight(rightNode);
-        rightNode.setParent(rootNode);
-
-        rightNode.setRight(rightRightChild);
-        rightRightChild.setParent(rightNode);
-
-        rightNode.setLeft(rightLeftChild);
-        rightLeftChild.setParent(rightNode);
-        leftNode.updateHeight();
-        rightNode.updateHeight();
-        rootNode.updateHeight();
-        System.out.println("Before:");
-        ageTree.print();
-
-        // Test BSTDeleteion
-        // testBSTDeletion(ageTree, rootNode, rightLeftChild, rightNode);
-
-        ageTree.remove(18, 1);
-        // System.out.println();
-        // System.out.println("Remove: Key 18, Id 1");
-        // ageTree.print();
-        ageTree.remove(14, 2);
-        System.out.println();
-        System.out.println("Remove: Key 14, Id 2");
-        ageTree.print();
-    }
-
-    public static void testBSTDeletion(AVLTree<Integer> tree, AVLNode<Integer> root, AVLNode<Integer> noChild,
-            AVLNode<Integer> oneChild) {
-        tree.BSTDeletion(root);
-        System.out.println("Delete Root");
-        tree.print();
-        tree.BSTDeletion(noChild);
-        System.out.println("Delete no child");
-        tree.print();
-        System.out.println("Delete 1 child");
-        tree.BSTDeletion(oneChild);
-        tree.print();
-    }
-
-    public static void test() {
         AVLTree<Integer> ageTree = new AVLTree<>();
         Integer[] arr = { 41, 99, 67, 90, 81, 23, 80, 84, 9, 60, 94, 78 };
 

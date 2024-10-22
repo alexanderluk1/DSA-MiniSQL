@@ -2,6 +2,7 @@ package edu.smu.smusql;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 
 import edu.smu.smusql.ErrorChecks.TypeConverter;
 import edu.smu.smusql.pair1.Table;
@@ -18,8 +19,8 @@ public class Engine {
             case "CREATE" -> create(tokens[2], query);
             case "INSERT" -> insert(tokens[2], query);
             case "SELECT" -> select(tokens[3], query);
-            case "UPDATE" -> update(tokens);
-            case "DELETE" -> delete(tokens);
+            case "UPDATE" -> update(tokens[1], query);
+            case "DELETE" -> delete(tokens[2], query);
             default -> "ERROR: Unknown command";
         };
     }
@@ -62,7 +63,6 @@ public class Engine {
 
         // Add record to the table
         tableToAdd.insertRecord(convertedParameters);
-        tableToAdd.print();
         return "success";
     }
 
@@ -79,8 +79,16 @@ public class Engine {
      * 5. Format and return to user
      */
     public String select(String tableName, String query) {
-        //TODO
-        return "not implemented";
+        List<String> parsedCommand = Parser.parseSelect(query);
+
+        Table tableToSelectFrom = db.getTable(tableName);
+
+        if (Objects.equals(parsedCommand.get(0), "basic")) {
+            System.out.println(tableToSelectFrom.getAll());
+            return tableToSelectFrom.getAll();
+        }
+        return tableToSelectFrom.formatRecords(
+                    tableToSelectFrom.getWithCondition(parsedCommand));
     }
 
     /**
@@ -94,8 +102,11 @@ public class Engine {
      * 4. Update row(s)
      * 5. Return success message "Updated 3 rows"
      */
-    public String update(String[] tokens) {
-        //TODO
+    public String update(String tableName, String query) {
+        // List<String> parsedCommand = Parser.parseSelect(query);
+        // do you allow to set multiple columns at once or only 1 col
+        Table table = db.getTable(tableName);
+        table.updateRecord(table.getWithCondition(null));
         return "not implemented";
     }
 
@@ -115,8 +126,9 @@ public class Engine {
      *
      * 4. Return success message
      */
-    public String delete(String[] tokens) {
-
+    public String delete(String tableName, String query) {
+        Table table = db.getTable(tableName);
+        table.deleteRecords(table.getWithCondition(null));
         return "not implemented";
     }
 

@@ -1,23 +1,29 @@
 package edu.smu.smusql.pair1;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public class Record {
     
     private Integer id;
     private HashMap<String, Object> columns; // Column name and its value
 
-    public Record(Integer id) {
-        this.id = id;
+    public Record(List<String> colNames, List<Object> values) {
+        this.id = (Integer) values.get(0); // Assume first co1 is id
         this.columns = new HashMap<>();
+
+        for (int i = 1; i < colNames.size(); i++) {
+            setColumn(colNames.get(i), values.get(i));
+        }
     }
     
     public Integer getId() {
         return id;
     }
 
-    public void setColumn(String columnName, Object value){
+    private void setColumn(String columnName, Object value){
         columns.put(columnName, value);
     }
 
@@ -28,30 +34,5 @@ public class Record {
     @Override
     public int hashCode() {
         return id;
-    }
-
-    @Override
-    public String toString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append(String.format("| %-10d |", id));
-
-        // Add each column's value to the string
-        for (Map.Entry<String, Object> entry : columns.entrySet()) {
-            sb.append(String.format(" %-20s |", entry.getValue()));
-        }
-
-        return sb.toString();
-    }
-
-    public static void printHeader(Record record) {
-        System.out.print("| ID         |");
-
-        // Print the dynamic column names based on the record
-        for (String columnName : record.columns.keySet()) {
-            System.out.printf(" %-20s |", columnName);
-        }
-        
-        System.out.println();
-        System.out.println("|------------|---------------------|");
     }
 }
