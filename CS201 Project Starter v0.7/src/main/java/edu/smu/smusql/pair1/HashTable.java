@@ -4,36 +4,58 @@ public class HashTable {
     private ListNode[] buckets;
     private int size;
     private int numElements;
+    private final double MAXLOAD;
 
     public HashTable(int capacity) {
         this.size = capacity;
         this.buckets = new ListNode[capacity];
+        this.MAXLOAD = 0.75;
     }
 
-    private int hashFunction(int key) {
-        return key % size;
+    // index in bukets where record with key is stored
+    private int hash(int id) {
+        return id % size; // Basic hash function
     }
 
     private double loadFactor() { // number of elements vs size of table
         return (double) numElements / size;
     }
 
-    // Key is record.id
-    public void insert(int key, Record record) {
-
+    private void addToBucket(int index, Record record) {
+        ListNode newNode = new ListNode(record); // Create Node
+        newNode.setNext(buckets[index]); // Node points to top of bucket
+        buckets[index] = newNode; // newNode becomes top of bucket
     }
 
-    public Record search(int key) {
-        return null;
+    public void put(Record record) {
+        if (loadFactor() > MAXLOAD) {
+            resize(size * 2); // Increase size if load factor exceeds
+        }
+
+        int index = hash(record.getId());
+        addToBucket(index, record);
+        numElements++;
     }
 
-    public void delete(int key) {
-        int index = hashFunction(key);
+    public Record search(int id) {
+        int index = hash(id);
+        ListNode current = buckets[index];
+        while (current != null) {
+            if (current.getRecord().getId() == id) {
+                return current.getRecord(); // Found the record
+            }
+            current = current.getNext();
+        }
+        return null; // Record not found
+    }
+
+    public void remove(int id) {
+        int index = hash(id);
         ListNode current = buckets[index];
         ListNode prev = null;
 
         while (current != null) {
-            if (current.getKey() == key) { // finding record in bucket
+            if (current.getRecord().getId() == id) { // finding record in bucket
                 if (prev == null) { // first node of bucket
                     buckets[index] = current.getNext(); 
                 } else { // remove node from bucket
@@ -59,7 +81,7 @@ public class HashTable {
         for (ListNode bucket : buckets) {
             ListNode current = bucket;
             while (current != null) {
-                int newIndex = current.getKey() % newCapacity;
+                int newIndex = current.getRecord().getId() % newCapacity;
                 ListNode next = current.getNext();
                 current.setNext(newBuckets[newIndex]);
                 newBuckets[newIndex] = current;
@@ -85,8 +107,24 @@ public class HashTable {
 
     public static void main(String[] args) {
         HashTable ht = new HashTable(1);
-        ht.insert(1, null);
-        ht.insert(2, new Record());
+        // ht.insert(new Record(1, "AB", 18, 3.2, true));
+        ht.put(new Record(4, "B", 19, 3.4, false));
+        // ht.insert(new Record(3, "B", 19, 3.4, false));
+        ht.put(new Record(8, "B", 19, 3.4, false));
+        // ht.insert(new Record(5, "B", 19, 3.4, false));
+        ht.put(new Record(12, "B", 19, 3.4, false));
+        ht.put(new Record(20, "B", 19, 3.4, false));
+        ht.put(new Record(16, "B", 19, 3.4, false));
+        // ht.insert(new Record(9, "B", 19, 3.4, false));
+        // ht.insert(new Record(10, "B", 19, 3.4, false));
+        // ht.insert(new Record(12, "B", 19, 3.4, false));
+        // ht.insert(new Record(16, "B", 19, 3.4, false));
+
+        // ht.remove(1);
+        // ht.remove(3);
+        // ht.remove(4);
+        // ht.remove(5);
+        // ht.remove(9);
         ht.print();
     }
 }

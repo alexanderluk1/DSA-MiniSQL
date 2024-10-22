@@ -8,6 +8,13 @@ public class Record {
     private Double gpa;
     private Boolean deansList;
 
+    public Record(Integer id, String name, Integer age, Double gpa, Boolean deansList) {
+        this.id = id;
+        this.name = name;
+        this.age = age;
+        this.gpa = gpa;
+        this.deansList = deansList;
+    }
     
     public Integer getId() {
         return id;
@@ -51,11 +58,11 @@ public class Record {
 
     @Override
     public String toString() {
-        return null;
+        return id + ", " + name;
     }    
 
     @Override
     public int hashCode() {
-        return 0;
+        return id;
     }
 }

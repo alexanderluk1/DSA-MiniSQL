@@ -4,9 +4,9 @@ public class ListNode {
     private Record record;
     private ListNode next;
 
-    public ListNode(Record record, ListNode next) {
+    public ListNode(Record record) {
         this.record = record;
-        this.next = next;
+        this.next = null;
     }
 
     public Record getRecord() {
@@ -24,8 +24,4 @@ public class ListNode {
     public void setNext(ListNode next) {
         this.next = next;
     }    
-
-    public Integer getKey() {
-        return this.record.getId();
-    }
 }
