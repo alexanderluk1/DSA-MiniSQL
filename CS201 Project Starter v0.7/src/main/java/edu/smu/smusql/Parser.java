@@ -17,6 +17,8 @@ public class Parser {
 
     public Parser() {}
 
+    /* This method removes the brackets in the SQL query */
+    /* Then puts the column name in a List<String> */
     public static List<String> parseCreate(String query) {
         int startIndex = query.indexOf('(');
         int endIndex = query.indexOf(')');
