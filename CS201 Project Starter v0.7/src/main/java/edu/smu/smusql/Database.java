@@ -28,4 +28,10 @@ public class Database {
     public boolean doesTableExist(String tableName) {
         return tables.containsKey(tableName);
     }
+
+    public void showAllTables() {
+        for (String tableName : tables.keySet()) {
+            System.out.print(tableName + " ");
+        }
+    }
 }
