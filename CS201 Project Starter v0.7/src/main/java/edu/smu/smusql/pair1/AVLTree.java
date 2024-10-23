@@ -13,10 +13,106 @@ public class AVLTree<K> {
         return node == null ? 0 : height(node.getLeft()) - height(node.getRight());
     }
 
+    //Insert method
     public void insert(K key, int id) {
-        return;
+        root = insert(root, key, id);
+    }
+    
+    private AVLNode<K> insert(AVLNode<K> node, K key, int id) {
+        // Base case: If node is null, create and return a new node
+        if (node == null) {
+            size++; // Increase the size of the tree
+            return new AVLNode<>(key, id); // Return the new node to be attached to the parent
+        }
+    
+        // Compare keys to find the correct insertion point
+        if (key instanceof Comparable && node.getKey() instanceof Comparable) {
+            Comparable<K> k = (Comparable<K>) key;
+            int comp = k.compareTo(node.getKey());
+    
+            if (comp < 0) {
+                // Insert in the left subtree
+                node.setLeft(insert(node.getLeft(), key, id));
+                node.getLeft().setParent(node); // Update parent link
+            } else if (comp > 0) {
+                // Insert in the right subtree
+                node.setRight(insert(node.getRight(), key, id));
+                node.getRight().setParent(node); // Update parent link
+            } else {
+                // If the key already exists, add the value to the node's list
+                node.getValues().add(id);
+                return node; // Return the current node, as no structural changes are needed
+            }
+        }
+    
+        // Update the height of the current node after insertion
+        node.updateHeight();
+    
+        // Get the balance factor of the node to check if it's balanced
+        int balance = getBalance(node);
+    
+        // Rebalance the node if necessary and return the new root of the subtree
+        return rebalance(balance, node);
+    }
+    
+    //Find more method
+    public List<K> findMore(K key) {
+        List<K> result = new ArrayList<>();
+        findMore(root, key, result);
+        return result;
+    }
+    
+    private void findMore(AVLNode<K> node, K key, List<K> result) {
+        if (node == null) {
+            return;
+        }
+    
+        if (key instanceof Comparable && node.getKey() instanceof Comparable) {
+            Comparable<K> k = (Comparable<K>) key;
+            int comp = k.compareTo(node.getKey());
+    
+            if (comp < 0) {
+                // Current node's key is greater, so add it and check the left and right subtrees
+                result.add(node.getKey());
+                findMore(node.getLeft(), key, result);
+                findMore(node.getRight(), key, result);
+            } else {
+                // Only check the right subtree if the key is smaller or equal
+                findMore(node.getRight(), key, result);
+            }
+        }
     }
 
+
+    //Find less method
+    public List<K> findLess(K key) {
+        List<K> result = new ArrayList<>();
+        findLess(root, key, result);
+        return result;
+    }
+    
+    private void findLess(AVLNode<K> node, K key, List<K> result) {
+        if (node == null) {
+            return;
+        }
+    
+        if (key instanceof Comparable && node.getKey() instanceof Comparable) {
+            Comparable<K> k = (Comparable<K>) key;
+            int comp = k.compareTo(node.getKey());
+    
+            if (comp > 0) {
+                // Current node's key is smaller, so add it and check the left and right subtrees
+                result.add(node.getKey());
+                findLess(node.getLeft(), key, result);
+                findLess(node.getRight(), key, result);
+            } else {
+                // Only check the left subtree if the key is larger or equal
+                findLess(node.getLeft(), key, result);
+            }
+        }
+    }
+    
+    
     private AVLNode<K> largestOnLeft(AVLNode<K> node) {
         AVLNode<K> current = node;
         while (current.getRight() != null) {
