@@ -1,15 +1,16 @@
 package edu.smu.smusql;
 
 import java.util.*;
+import edu.smu.smusql.Evaluation.CustomEvaluation;
 
-// @author ziyuanliu@smu.edu.sg
+// @author Alexander Luk
 
 public class Main {
     /*
      *  Main method for accessing the command line interface of the database engine.
      *  MODIFICATION OF THIS FILE IS NOT RECOMMENDED!
      */
-    static Engine dbEngine = new Engine();
+    public static Engine dbEngine = new Engine();
     public static void main(String[] args) {
 
         Scanner scanner = new Scanner(System.in);
@@ -23,8 +24,12 @@ public class Main {
             if (query.equalsIgnoreCase("exit")) {
                 break;
             }
-            else if (query.equalsIgnoreCase("eval2")) {
-                deterministicPrepopulateTable();
+            else if (query.equalsIgnoreCase("populate")) {
+                CustomEvaluation.deterministicPrepopulateTable();
+                continue;
+            }
+            else if (query.equalsIgnoreCase("customEval")) {
+                CustomEvaluation.runEvaluation(1_000_000);
                 continue;
             }
             else if (query.equalsIgnoreCase("evaluate")) {
@@ -95,26 +100,6 @@ public class Main {
         }
 
         System.out.println("Finished processing " + numberOfQueries + " queries.");
-    }
-
-    private static void deterministicPrepopulateTable() {
-        dbEngine.executeSQL("CREATE TABLE student (id, name, age, gpa, deans_list)");
-        System.out.println("Prepopulating students");
-
-        String[] insertCommands = {
-                "INSERT INTO student VALUES (1, 'John', 30, 2.4, False)",
-                "INSERT INTO student VALUES (2, 'Alice', 18, 3.6, True)",
-                "INSERT INTO student VALUES (3, 'Bob', 19, 3.2, False)",
-                "INSERT INTO student VALUES (4, 'Charlie', 21, 2.9, False)",
-                "INSERT INTO student VALUES (5, 'Diana', 17, 3.9, True)",
-                "INSERT INTO student VALUES (6, 'Evan', 20, 3.1, True)",
-                "INSERT INTO student VALUES (7, 'Frank', 16, 3.4, False)"
-        };
-
-        for (String insertCommand : insertCommands) {
-            dbEngine.executeSQL(insertCommand);
-        }
-        System.out.println("Student records have been prepopulated.");
     }
 
     private static void prepopulateTables(Random random) {

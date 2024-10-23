@@ -91,6 +91,11 @@ public class Engine {
         List<String> parsedCommand = Parser.parseSelect(query);
 
         Table tableToSelectFrom = db.getTable(tableName);
+        if (tableToSelectFrom == null) {
+            System.out.println("No table of that name can be found for" + tableName);
+            db.showAllTables();
+            return "";
+        }
 
         if (Objects.equals(parsedCommand.get(0), "basic")) {
             return tableToSelectFrom.retrieveAllFromTable();
