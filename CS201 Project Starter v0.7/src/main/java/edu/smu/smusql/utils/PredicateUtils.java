@@ -27,13 +27,33 @@ public class PredicateUtils {
     }
 
     public static Predicate<Record> createPredicateForCondition(String condition, int columnIndex, List<Record> records) {
-        String[] individualOperands = condition.split(" ");
-        String operator = individualOperands[1];
-        Object rightOperand = TypeConverter.parseValue(individualOperands[2]);
+        // Debugging: print out the condition to help diagnose issues
+        System.out.println("Evaluating condition: " + condition);
+
+        // Split condition into parts, ensuring proper handling of spaces and quotes
+        String[] individualOperands = condition.trim().split(" (?=(?:[^']*'[^']*')*[^']*$)");
+
+        // Ensure that the condition contains at least 3 parts: left operand, operator, right operand
+        if (individualOperands.length < 3) {
+            System.err.println("Invalid condition format: " + condition);
+            return record -> false; // Return a predicate that always returns false
+        }
+
+        String leftOperand = individualOperands[0].trim();
+        String operator = individualOperands[1].trim();
+        // Handle right operand, removing any surrounding quotes
+        String rightOperandRaw = individualOperands[2].trim();
+        Object rightOperand = TypeConverter.parseValue(rightOperandRaw.replaceAll("^'(.*)'$", "$1"));
 
         return (Record record) -> {
-            Object leftOperand = record.getField(columnIndex);
-            return evaluateCondition(operator, leftOperand, rightOperand);
+            try {
+                // Ensure the field exists and is accessed correctly
+                Object fieldValue = record.getField(columnIndex);
+                return evaluateCondition(operator, fieldValue, rightOperand);
+            } catch (IndexOutOfBoundsException e) {
+                System.err.println("Index out of bounds while evaluating: " + condition);
+                return false; // Fail-safe to prevent crashes
+            }
         };
     }
 

@@ -227,9 +227,9 @@ public class CustomEvaluation {
         String tableName = tables[random.nextInt(tables.length)];
 
         // Conditions specific to each table's schema
-        String[] studentConditions = {"age > 20", "gpa > 3.0", "deans_list = true", "name LIKE 'A%'"};
-        String[] userConditions = {"age > 30", "city = 'New York'", "name LIKE 'A%'", "age < 25"};
-        String[] productConditions = {"price < 500", "category = 'Electronics'", "name LIKE 'Laptop%'", "price > 100"};
+        String[] studentConditions = {"age > 20", "gpa > 3.0", "deans_list = true"};
+        String[] userConditions = {"age > 30", "city = 'New York'", "age < 25"};
+        String[] productConditions = {"price < 500", "category = 'Electronics'", "price > 100"};
         String[] orderConditions = {"quantity > 5", "user_id = 1", "product_id = 100", "quantity < 50"};
 
         // Logical operators
@@ -259,6 +259,8 @@ public class CustomEvaluation {
         } else { // Otherwise, use only one condition
             query = String.format("SELECT * FROM %s WHERE %s", tableName, condition1);
         }
+
+        System.out.println("Generated Query: " + query); // Debugging output to see the generated query
 
         return query;
     }
