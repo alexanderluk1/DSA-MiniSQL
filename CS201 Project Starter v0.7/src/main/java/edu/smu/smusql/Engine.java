@@ -1,5 +1,6 @@
 package edu.smu.smusql;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
@@ -106,7 +107,17 @@ public class Engine {
         // List<String> parsedCommand = Parser.parseSelect(query);
         // do you allow to set multiple columns at once or only 1 col
         Table table = db.getTable(tableName);
-        table.updateRecord(table.getWithCondition(null));
+        List<String> parsedUpdate = Parser.updateParser(query);
+
+        // column name to update
+        String colName = parsedUpdate.get(1);
+        String newValue = parsedUpdate.get(2);
+        String whereClauseConditions = parsedUpdate.get(3);
+
+        List<String> command = new ArrayList<>(Arrays.asList(colName, whereClauseConditions));
+        List<Integer> recordIds = table.getWithCondition(command);
+
+        table.updateRecord(recordIds, colName, newValue);
         return "not implemented";
     }
 
@@ -127,8 +138,14 @@ public class Engine {
      * 4. Return success message
      */
     public String delete(String tableName, String query) {
+        List<String> parsedDelete = Parser.parseDelete(query);
+        System.out.println(parsedDelete);
+        String whereClauseConditions = parsedDelete.get(1);
         Table table = db.getTable(tableName);
-        table.deleteRecords(table.getWithCondition(null));
+        List<String> command = new ArrayList<>(Arrays.asList(whereClauseConditions));
+        System.out.println(command);
+        List<Integer> recordIds = table.getWithCondition(command);
+        table.deleteRecords(recordIds);
         return "not implemented";
     }
 

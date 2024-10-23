@@ -83,6 +83,50 @@ public class Parser {
         return parsedConditions;
     }
 
+    // [ tableName | columnName | newValue | null OR conditionString ]
+    public static List<String> updateParser( String query ) {
+        List<String> parsedUpdate = new ArrayList<>();
+
+        // Split by tokens 
+        String[] tokens = query.trim().split("\\s+");
+
+        String tableName = tokens[1];
+        parsedUpdate.add(tableName); 
+
+        String setColumn = tokens[3];
+        String setNewValue = tokens[5];
+        parsedUpdate.add(setColumn);
+        parsedUpdate.add(setNewValue);
+
+        // if query contains WHERE clause 
+        if ( query.contains("WHERE") ) {
+            String whereClauseConditions = query.split("WHERE")[1].trim();
+            // parse the conditions 
+            parsedUpdate.add(whereClauseConditions);
+        } else {
+            parsedUpdate.add(null); // to indicate that there is not WHERE clause 
+        }
+
+        return parsedUpdate;
+
+    }
+
+    public static List<String> parseDelete ( String query ) {
+        List<String> parsedDelete = new ArrayList<>();
+        String[] tokens = query.trim().split("\\s+");
+
+        String tableName = tokens[2];
+        parsedDelete.add(tableName);
+
+        if (query.contains("WHERE")) {
+            String whereClauseConditions = query.split("WHERE")[1].trim();
+            parsedDelete.add(whereClauseConditions);
+        } else {
+            parsedDelete.add(null);  // No WHERE clause
+        }
+        return parsedDelete;
+    }
+
     public void parseInsert(String[] tokens) {
         String tableName = tokens[2]; // The name of the table to be inserted into.
         String valueList = queryBetweenParentheses(tokens, 4); // Get values list between parentheses

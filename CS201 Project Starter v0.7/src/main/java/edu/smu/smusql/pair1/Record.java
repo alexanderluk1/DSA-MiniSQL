@@ -23,7 +23,7 @@ public class Record {
         return id;
     }
 
-    private void setColumn(String columnName, Object value){
+    public void setColumn(String columnName, Object value){
         columns.put(columnName, value);
     }
 

@@ -39,12 +39,20 @@ public class Table {
 
     public void deleteRecords(List<Integer> list) {
         for (Integer id : list) {
+            System.out.println("Before: " + records.get(id));
             records.remove(id);
+            System.out.println("After: " + records.get(id));
         }
     }
 
-    public void updateRecord(List<Integer> list) {
-        // TO DO
+    public void updateRecord(List<Integer> list, String colName, String value) {
+        for (Integer id : list) {
+            
+            Record record = records.get(id);
+            System.out.println("Before: " + record);
+            record.setColumn(colName, value);
+            System.out.println("After: " + record);
+        }
     }
 
     public String getTableName() {
