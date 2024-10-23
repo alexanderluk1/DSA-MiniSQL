@@ -24,11 +24,7 @@ public class Main {
             if (query.equalsIgnoreCase("exit")) {
                 break;
             }
-            else if (query.equalsIgnoreCase("populate")) {
-                CustomEvaluation.deterministicPrepopulateTable();
-                continue;
-            }
-            else if (query.equalsIgnoreCase("customEval")) {
+            else if (query.equalsIgnoreCase("eval")) {
                 CustomEvaluation.runEvaluation(1_000_000);
                 continue;
             }
