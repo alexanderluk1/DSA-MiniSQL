@@ -21,7 +21,6 @@ public class Engine {
             case "CREATE" -> create(tokens[2], query);
             case "INSERT" -> insert(tokens[2], query);
             case "SELECT" -> select(tokens[3], query);
-       
             case "UPDATE" -> update(tokens[1], query);
             case "DELETE" -> delete(tokens[2], query);
 
@@ -92,7 +91,8 @@ public class Engine {
 
         Table tableToSelectFrom = db.getTable(tableName);
         if (tableToSelectFrom == null) {
-            System.out.println("No table of that name can be found for" + tableName);
+            System.out.println("No table of that name can be found for " + tableName);
+            System.out.print("Tables available: ");
             db.showAllTables();
             return "";
         }

@@ -40,7 +40,10 @@ public class Parser {
      *      * SELECT * FROM student WHERE gpa > 3.8 OR age < 20
      */
     public static List<String> parseSelect(String query) {
-        if (query.contains("WHERE")) return parseSelectWhere(query);
+        String lowerCaseQuery = query.toLowerCase(); // Convert the query to lowercase for case-insensitive comparison
+        if (lowerCaseQuery.contains("where")) {
+            return parseSelectWhere(query);
+        }
         return parseBasicSelect(query);
     }
 
@@ -51,9 +54,16 @@ public class Parser {
     private static List<String> parseBasicSelect(String query) {
         List<String> parsedSelectCommand = new ArrayList<>();
         parsedSelectCommand.add("basic");
-        Collections.addAll(parsedSelectCommand, query.split(" "));
 
+        // Convert query to lowercase for case-insensitive parsing
+        String lowerCaseQuery = query.toLowerCase();
+
+        // Split the lowercase query and trim any spaces
+        Collections.addAll(parsedSelectCommand, lowerCaseQuery.split(" "));
+
+        // Remove extra whitespaces
         parsedSelectCommand.replaceAll(String::trim);
+
         return parsedSelectCommand;
     }
 
@@ -68,54 +78,71 @@ public class Parser {
     private static List<String> parseSelectWhere(String query) {
         List<String> parsedSelectCommand = new ArrayList<>();
 
-        Collections.addAll(parsedSelectCommand, query.split("WHERE"));
+        // Convert only the SQL keywords to lowercase, not the actual values
+        String[] queryParts = query.split("(?i)where");  // Case-insensitive split for the WHERE clause
 
-        parsedSelectCommand.replaceAll(String::trim);
+        parsedSelectCommand.add(queryParts[0].trim());  // Add everything before WHERE clause (case-insensitive part)
+
+        if (queryParts.length > 1) {
+            parsedSelectCommand.add(queryParts[1].trim());  // Add everything after WHERE clause (including actual values like 'John')
+        }
+
         return parsedSelectCommand;
     }
 
 
     // [ tableName | columnName | newValue | null OR conditionString ]
-    public static List<String> updateParser( String query ) {
+    public static List<String> updateParser(String query) {
         List<String> parsedUpdate = new ArrayList<>();
 
-        // Split by tokens 
-        String[] tokens = query.trim().split("\\s+");
+        // Convert query to lowercase for case-insensitive parsing
+        String lowerCaseQuery = query.toLowerCase();
 
+        // Split by tokens (e.g., "UPDATE table SET column = value WHERE...")
+        String[] tokens = lowerCaseQuery.trim().split("\\s+");
+
+        // Extract table name and add to parsedUpdate
         String tableName = tokens[1];
-        parsedUpdate.add(tableName); 
+        parsedUpdate.add(tableName);
 
+        // Extract SET clause (column name and new value)
         String setColumn = tokens[3];
         String setNewValue = tokens[5];
         parsedUpdate.add(setColumn);
         parsedUpdate.add(setNewValue);
 
-        // if query contains WHERE clause 
-        if ( query.contains("WHERE") ) {
-            String whereClauseConditions = query.split("WHERE")[1].trim();
-            // parse the conditions 
-            parsedUpdate.add(whereClauseConditions);
+        // Check if the query contains a WHERE clause
+        if (lowerCaseQuery.contains("where")) {
+            String whereClauseConditions = lowerCaseQuery.split("where")[1].trim();
+            parsedUpdate.add(whereClauseConditions);  // Add WHERE conditions
         } else {
-            parsedUpdate.add(null); // to indicate that there is not WHERE clause 
+            parsedUpdate.add(null);  // Indicate no WHERE clause
         }
 
         return parsedUpdate;
-
     }
 
-    public static List<String> parseDelete ( String query ) {
+    public static List<String> parseDelete(String query) {
         List<String> parsedDelete = new ArrayList<>();
+
+        // Convert the query to lowercase for case-insensitive matching
+        String lowerQuery = query.toLowerCase();
+
+        // Split the original query to preserve table name casing
         String[] tokens = query.trim().split("\\s+");
 
-        String tableName = tokens[2];
+        String tableName = tokens[2];  // The table name is preserved with original casing
         parsedDelete.add(tableName);
 
-        if (query.contains("WHERE")) {
-            String whereClauseConditions = query.split("WHERE")[1].trim();
+        // Find the WHERE clause (case insensitive)
+        if (lowerQuery.contains("where")) {
+            // Split the original query to get the WHERE clause while preserving the original casing
+            String whereClauseConditions = query.split("(?i)WHERE")[1].trim();
             parsedDelete.add(whereClauseConditions);
         } else {
             parsedDelete.add(null);  // No WHERE clause
         }
+
         return parsedDelete;
     }
 
@@ -127,99 +154,24 @@ public class Parser {
 
 
     /* This method returns the individual conditions (eg. "gpa > 3.8")  as long as there is a WHERE clause */
-    public static List<String> parseConditions(String query /* after WHERE clause */ ) {
+    public static List<String> parseConditions(String query) {
         List<String> conditions = new ArrayList<>();
 
+        // Handle logical operators in a case-insensitive way, but don't affect actual values
         String logicalOperator = null;
-
-        // assumption query only has one AND | OR 
-        if (query.contains("AND")) logicalOperator = "AND";
-        else if (query.contains("OR")) logicalOperator = "OR";
+        if (query.toLowerCase().contains("and")) logicalOperator = "AND";
+        else if (query.toLowerCase().contains("or")) logicalOperator = "OR";
 
         if (logicalOperator != null) {
-            String[] conditionParts = query.split(logicalOperator);
-
+            String[] conditionParts = query.split("(?i)" + logicalOperator);  // Case-insensitive split for AND/OR
             for (String part : conditionParts) {
-                conditions.add(part.trim());
+                conditions.add(part.trim());  // Keep the original casing for the actual data
             }
-            conditions.add(logicalOperator);
-        }
-        else {
-            conditions.add(query.trim());
+            conditions.add(logicalOperator);  // Add the logical operator itself
+        } else {
+            conditions.add(query.trim());  // No logical operator, just add the full condition
         }
 
         return conditions;
-    }
-
-    // --------------- DEFAULT PARSER FROM HERE ON DOWN ---------------
-
-    public void parseInsert(String[] tokens) {
-        String tableName = tokens[2]; // The name of the table to be inserted into.
-        String valueList = queryBetweenParentheses(tokens, 4); // Get values list between parentheses
-        List<String> values = Arrays.asList(valueList.split(",")); // These are the values in the row to be inserted.
-    }
-
-    public void parseDelete(String[] tokens) {
-        String tableName = tokens[2]; // The name of the table to be deleted from.
-
-        List<String[]> whereClauseConditions = new ArrayList<>(); // Array for storing conditions from the where clause.
-
-        // Parse WHERE clause conditions
-        if (tokens.length > 3 && tokens[3].toUpperCase().equals("WHERE")) {
-            for (int i = 4; i < tokens.length; i++) {
-                if (tokens[i].toUpperCase().equals("AND") || tokens[i].toUpperCase().equals("OR")) {
-                    // Add AND/OR conditions
-                    whereClauseConditions.add(new String[] {tokens[i].toUpperCase(), null, null, null});
-                } else if (isOperator(tokens[i])) {
-                    // Add condition with operator (column, operator, value)
-                    String column = tokens[i - 1];
-                    String operator = tokens[i];
-                    String value = tokens[i + 1];
-                    whereClauseConditions.add(new String[] {null, column, operator, value});
-                    i += 1; // Skip the value since it has been processed
-                }
-            }
-        }
-    }
-
-    public void parseUpdate(String[] tokens){
-        String tableName = tokens[1]; // name of the table to be updated
-
-        String setColumn = tokens[3]; // column to be updated
-        String newValue = tokens[5]; // new value for above column
-
-        // Initialize whereClauseConditions list
-        List<String[]> whereClauseConditions = new ArrayList<>();
-
-        // Parse WHERE clause conditions
-        if (tokens.length > 6 && tokens[6].equalsIgnoreCase("WHERE")) {
-            for (int i = 5; i < tokens.length; i++) {
-                if (tokens[i].equalsIgnoreCase("AND") || tokens[i].equalsIgnoreCase("OR")) {
-                    // Add AND/OR conditions
-                    whereClauseConditions.add(new String[] {tokens[i].toUpperCase(), null, null, null});
-                } else if (isOperator(tokens[i])) {
-                    // Add condition with operator (column, operator, value)
-                    String column = tokens[i - 1];
-                    String operator = tokens[i];
-                    String value = tokens[i + 1];
-                    whereClauseConditions.add(new String[] {null, column, operator, value});
-                    i += 1; // Skip the value since it has been processed
-                }
-            }
-        }
-    }
-
-    // Helper method to extract content inside parentheses
-    private String queryBetweenParentheses(String[] tokens, int startIndex) {
-        StringBuilder result = new StringBuilder();
-        for (int i = startIndex; i < tokens.length; i++) {
-            result.append(tokens[i]).append(" ");
-        }
-        return result.toString().trim().replaceAll("\\(", "").replaceAll("\\)", "");
-    }
-
-    // Helper method to determine if a string is an operator
-    private boolean isOperator(String token) {
-        return token.equals("=") || token.equals(">") || token.equals("<") || token.equals(">=") || token.equals("<=");
     }
 }

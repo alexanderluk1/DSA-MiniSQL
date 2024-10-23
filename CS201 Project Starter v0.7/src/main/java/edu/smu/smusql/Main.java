@@ -25,7 +25,7 @@ public class Main {
                 break;
             }
             else if (query.equalsIgnoreCase("eval")) {
-                CustomEvaluation.runEvaluation(1_000_000);
+                CustomEvaluation.runEvaluation(10000);
                 continue;
             }
             else if (query.equalsIgnoreCase("evaluate")) {

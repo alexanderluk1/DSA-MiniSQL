@@ -179,14 +179,10 @@ public class Table {
     
         return deletedRowCount;  // Return the number of deleted rows
     }
-    
-
-
 
     public int getIndexOfColumnName(String columnName) {
         return columns.indexOf(columnName);
     }
-
 
     @Override
     public String toString() {
