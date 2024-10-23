@@ -1,5 +1,8 @@
 package edu.smu.smusql.pair1;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class AVLTree<K> {
 
     private AVLNode<K> root;
@@ -13,23 +16,24 @@ public class AVLTree<K> {
         return node == null ? 0 : height(node.getLeft()) - height(node.getRight());
     }
 
-    //Insert method
+    // Insert method
     public void insert(K key, int id) {
-        root = insert(root, key, id);
+        return;
+        // root = insert(root, key, id);
     }
-    
+
     private AVLNode<K> insert(AVLNode<K> node, K key, int id) {
         // Base case: If node is null, create and return a new node
         if (node == null) {
             size++; // Increase the size of the tree
             return new AVLNode<>(key, id); // Return the new node to be attached to the parent
         }
-    
+
         // Compare keys to find the correct insertion point
         if (key instanceof Comparable && node.getKey() instanceof Comparable) {
             Comparable<K> k = (Comparable<K>) key;
             int comp = k.compareTo(node.getKey());
-    
+
             if (comp < 0) {
                 // Insert in the left subtree
                 node.setLeft(insert(node.getLeft(), key, id));
@@ -44,35 +48,36 @@ public class AVLTree<K> {
                 return node; // Return the current node, as no structural changes are needed
             }
         }
-    
+
         // Update the height of the current node after insertion
         node.updateHeight();
-    
+
         // Get the balance factor of the node to check if it's balanced
         int balance = getBalance(node);
-    
+
         // Rebalance the node if necessary and return the new root of the subtree
         return rebalance(balance, node);
     }
-    
-    //Find more method
-    public List<K> findMore(K key) {
+
+    // Find more method
+    public List<Integer> findMore(K key) {
         List<K> result = new ArrayList<>();
         findMore(root, key, result);
-        return result;
+        return null;
     }
-    
+
     private void findMore(AVLNode<K> node, K key, List<K> result) {
         if (node == null) {
             return;
         }
-    
+
         if (key instanceof Comparable && node.getKey() instanceof Comparable) {
             Comparable<K> k = (Comparable<K>) key;
             int comp = k.compareTo(node.getKey());
-    
+
             if (comp < 0) {
-                // Current node's key is greater, so add it and check the left and right subtrees
+                // Current node's key is greater, so add it and check the left and right
+                // subtrees
                 result.add(node.getKey());
                 findMore(node.getLeft(), key, result);
                 findMore(node.getRight(), key, result);
@@ -83,25 +88,25 @@ public class AVLTree<K> {
         }
     }
 
-
-    //Find less method
-    public List<K> findLess(K key) {
+    // Find less method
+    public List<Integer> findLess(K key) {
         List<K> result = new ArrayList<>();
         findLess(root, key, result);
-        return result;
+        return null;
     }
-    
+
     private void findLess(AVLNode<K> node, K key, List<K> result) {
         if (node == null) {
             return;
         }
-    
+
         if (key instanceof Comparable && node.getKey() instanceof Comparable) {
             Comparable<K> k = (Comparable<K>) key;
             int comp = k.compareTo(node.getKey());
-    
+
             if (comp > 0) {
-                // Current node's key is smaller, so add it and check the left and right subtrees
+                // Current node's key is smaller, so add it and check the left and right
+                // subtrees
                 result.add(node.getKey());
                 findLess(node.getLeft(), key, result);
                 findLess(node.getRight(), key, result);
@@ -111,8 +116,7 @@ public class AVLTree<K> {
             }
         }
     }
-    
-    
+
     private AVLNode<K> largestOnLeft(AVLNode<K> node) {
         AVLNode<K> current = node;
         while (current.getRight() != null) {
@@ -194,7 +198,7 @@ public class AVLTree<K> {
     private AVLNode<K> rightRotate(AVLNode<K> z) {
         AVLNode<K> y = z.getLeft();
         AVLNode<K> reattach = y.getRight();
-        System.out.println("Right: z " + z + ", y " + y + ", loose " + reattach);
+        // System.out.println("Right: z " + z + ", y " + y + ", loose " + reattach);
 
         // Rotate
         updateParentChildLink(z, y);
@@ -212,7 +216,7 @@ public class AVLTree<K> {
     private AVLNode<K> leftRotate(AVLNode<K> z) {
         AVLNode<K> y = z.getRight();
         AVLNode<K> reattach = y.getLeft();
-        System.out.println("Left: z " + z + ", y " + y + ", loose " + reattach);
+        // System.out.println("Left: z " + z + ", y " + y + ", loose " + reattach);
 
         // Rotate
         updateParentChildLink(z, y);
@@ -251,13 +255,18 @@ public class AVLTree<K> {
             return leftRotate(node);
         }
 
-        return null; // should never reach here
+        node.updateHeight();
+        return node; // Balanced, return original node
     }
 
-    public void remove(K key, Integer id) {
+    public void remove(K key, Integer id, boolean removeAll) {
         AVLNode<K> toDelete = get(key); // get entry where key = key
 
-        toDelete.getValues().remove(id); // remove id
+        if (removeAll) {
+            toDelete.getValues().clear();
+        } else {
+            toDelete.getValues().remove(id); // remove id
+        }
 
         if (toDelete.getValues().size() == 0) { // Node should no longer exist
             size--;
@@ -268,21 +277,18 @@ public class AVLTree<K> {
             while (parent != null && !done) { // parent is above root
                 int prevHeight = parent.getHeight();
                 int bal = getBalance(parent);
+                AVLNode<K> afterRebalance = rebalance(bal, parent); // updates Height
 
-                if (bal >= -1 && bal <= 1) { // it is balanced
-                    parent.updateHeight();
-                    done = parent.getHeight() == prevHeight; // Height of remaining ancestors do not change
-                    parent = parent.getParent(); // go up 1 level
-
-                } else {
-                    if (parent == root) { // rebalancing root node
-                        root = rebalance(bal, parent); // Now balanced
-                        done = true;
-                    } else {
-                        parent = rebalance(bal, parent); // Now balanced
-                        parent = parent.getParent(); // Continue checking ancestors
-                    }
+                if (afterRebalance.getHeight() == prevHeight) {
+                    done = true; // Height of remaining ancestors do not change
                 }
+
+                if (parent == root) { // rebalancing root node
+                    root = afterRebalance; // root changed
+                }
+
+                parent = afterRebalance.getParent(); // go up 1 level to update Height
+
             }
         }
     }
@@ -343,9 +349,9 @@ public class AVLTree<K> {
         Integer[] arr = { 41, 99, 67, 90, 81, 23, 80, 84, 9, 60, 94, 78 };
 
         for (int i = 0; i < arr.length; i++) {
-            // ageTree.insert(arr[i], i);
+            ageTree.insert(arr[i], i);
         }
-        // ageTree.insert(99, 12);
+        ageTree.insert(99, 12);
 
         System.out.println("Before: ");
         ageTree.print();

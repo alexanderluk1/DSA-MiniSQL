@@ -5,6 +5,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
+
 /*
  * This is a rudimentary parser you may want to use to parse smuSQL statements.
  * Use of this parser is optional.
@@ -13,6 +14,11 @@ import java.util.List;
  * However, the sample implementation does not have a 'Parser' class.
  */
 public class Parser {
+
+    public Parser() {}
+
+    /* This method removes the brackets in the SQL query */
+    /* Then puts the column name in a List<String> */
     public static List<String> parseCreate(String query) {
         int startIndex = query.indexOf('(');
         int endIndex = query.indexOf(')');
@@ -38,7 +44,11 @@ public class Parser {
         return parseBasicSelect(query);
     }
 
-    public static List<String> parseBasicSelect(String query) {
+    // helper method for parseSelect
+    /* This helper method adds a 'basic' flag as the first element of the list 
+     * eg. ["basic", "SELECT", "*", "FROM", "student"]
+    */
+    private static List<String> parseBasicSelect(String query) {
         List<String> parsedSelectCommand = new ArrayList<>();
         parsedSelectCommand.add("basic");
         Collections.addAll(parsedSelectCommand, query.split(" "));
@@ -47,7 +57,15 @@ public class Parser {
         return parsedSelectCommand;
     }
 
-    public static List<String> parseSelectWhere(String query) {
+    // helper method for parseSelect
+    /*
+     * This method helps to break down the query into 2 main parts 
+     * (1) before the WHERE clause , and
+     * (2) after the WHERE clause
+     * 
+     * eg. ["SELECT * FROM student", "gpa > 3.8"]
+     */
+    private static List<String> parseSelectWhere(String query) {
         List<String> parsedSelectCommand = new ArrayList<>();
 
         Collections.addAll(parsedSelectCommand, query.split("WHERE"));
@@ -56,32 +74,6 @@ public class Parser {
         return parsedSelectCommand;
     }
 
-    /**
-     * This method splits up all the condition by "AND" / "OR"
-     * @param query - String of command -> "gpa > 3.8 AND age < 20"
-     * @return - A List -> [gpa > 3.8, age < 20]
-     */
-    public static List<String> parseSelectConditions(String query) {
-        List<String> parsedConditions = new ArrayList<>();
-        String logicalOperator = null;
-
-        if (query.contains("AND")) logicalOperator = "AND";
-        else if (query.contains("OR")) logicalOperator = "OR";
-
-        if (logicalOperator != null) {
-            String[] conditions = query.split(logicalOperator);
-
-            for (String condition : conditions) {
-                parsedConditions.add(condition.trim());
-            }
-            parsedConditions.add(logicalOperator);
-        }
-        else {
-            parsedConditions.add(query.trim());
-        }
-
-        return parsedConditions;
-    }
 
     // [ tableName | columnName | newValue | null OR conditionString ]
     public static List<String> updateParser( String query ) {
@@ -126,6 +118,40 @@ public class Parser {
         }
         return parsedDelete;
     }
+
+    /**
+     * This method splits up all the condition by "AND" / "OR"
+     * @param query - String of command -> "gpa > 3.8 AND age < 20"
+     * @return - A List -> [gpa > 3.8, age < 20]
+     */
+
+
+    /* This method returns the individual conditions (eg. "gpa > 3.8")  as long as there is a WHERE clause */
+    public static List<String> parseConditions(String query /* after WHERE clause */ ) {
+        List<String> conditions = new ArrayList<>();
+
+        String logicalOperator = null;
+
+        // assumption query only has one AND | OR 
+        if (query.contains("AND")) logicalOperator = "AND";
+        else if (query.contains("OR")) logicalOperator = "OR";
+
+        if (logicalOperator != null) {
+            String[] conditionParts = query.split(logicalOperator);
+
+            for (String part : conditionParts) {
+                conditions.add(part.trim());
+            }
+            conditions.add(logicalOperator);
+        }
+        else {
+            conditions.add(query.trim());
+        }
+
+        return conditions;
+    }
+
+    // --------------- DEFAULT PARSER FROM HERE ON DOWN ---------------
 
     public void parseInsert(String[] tokens) {
         String tableName = tokens[2]; // The name of the table to be inserted into.

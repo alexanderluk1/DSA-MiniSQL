@@ -86,38 +86,23 @@ public class Table {
         return sb.toString();
     }
 
-    public List<Integer> getWithCondition(List<String> command) {
-        String conditions = command.get(1);
-        // Parse the condition(s), e.g. "gpa > 3.8 AND age < 20"
-        // parsedCondition will include the logicalOperator at the BACK if more than 1 condition
-        List<String> parsedCondition = Parser.parseSelectConditions(conditions);
+    public List<Integer> getWithCondition(String colName, String operator, Object value) {
+        AVLTree<Object> tree = columns.get(colName);
 
-        String logicalOperator = parsedCondition.size() > 1 ? parsedCondition.get(parsedCondition.size() - 1) : null;
-
-        if (logicalOperator != null) {
-            parsedCondition.remove(parsedCondition.size() - 1);
+        List<Integer> result = new ArrayList<>();
+        if (operator.contains("=")) {
+            result.addAll(tree.get(value).getValues());
         }
 
-        List<Integer> listOfId = new ArrayList<>();
-        List<Set<Integer>> resultSet = new ArrayList<>();
-        // Iterate over conditions and create list of ID according to condition
-        for (String condition : parsedCondition) {
-            String[] words = condition.split(" ");
-            String columnName = words[0];
-            AVLTree<Object> tree = columns.get(columnName);
-            // resultSet.add(tree.findWithCondition(condition));
-        } 
+        if (operator.contains(">")) {
+            result.addAll(tree.findMore(value));
+        }
 
-        // Combine lists with AND/OR logic
-        // for (Set<Integer> set : resultSet) {
-        //     set.
-        // }
+        if (operator.contains("<")) {
+            result.addAll(tree.findLess(value));
+        }
 
-        // for (Integer id : listOfId) {
-        //     recordsRetrieved.add(records.get(id));
-        // }
-
-        return listOfId;
+        return result;
     }
 
     private String printHeader(List<String> columnNames) {

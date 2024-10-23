@@ -2,8 +2,10 @@ package edu.smu.smusql;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 
 import edu.smu.smusql.ErrorChecks.TypeConverter;
 import edu.smu.smusql.pair1.Table;
@@ -53,8 +55,10 @@ public class Engine {
         List<String> parsedCommand = Parser.parseCreate(query);
 
         // Error Checks
-        // if (!db.doesTableExist(tableName)) return Messages.TABLE_NOT_EXIST.getMessage();
-        // if (!ErrorChecks.doesColumnsMatch(parsedCommand, db.getTable(tableName))) return Messages.COLUMN_MISMATCH.getMessage();
+        // if (!db.doesTableExist(tableName)) return
+        // Messages.TABLE_NOT_EXIST.getMessage();
+        // if (!ErrorChecks.doesColumnsMatch(parsedCommand, db.getTable(tableName)))
+        // return Messages.COLUMN_MISMATCH.getMessage();
 
         // Convert Parameters to their corresponding type
         List<Object> convertedParameters = TypeConverter.convertParams(parsedCommand);
@@ -81,15 +85,48 @@ public class Engine {
      */
     public String select(String tableName, String query) {
         List<String> parsedCommand = Parser.parseSelect(query);
-
+        // col operator value, col operator value, logic
         Table tableToSelectFrom = db.getTable(tableName);
 
         if (Objects.equals(parsedCommand.get(0), "basic")) {
-            System.out.println(tableToSelectFrom.getAll());
             return tableToSelectFrom.getAll();
         }
-        return tableToSelectFrom.formatRecords(
-                    tableToSelectFrom.getWithCondition(parsedCommand));
+
+        List<Integer> listOfIds = getRecordIds(tableToSelectFrom, 
+                                  Parser.parseConditions(parsedCommand.get(1)));
+        return tableToSelectFrom.formatRecords(listOfIds);
+    }
+
+    private List<Integer> getRecordIds(Table table, List<String> conditions) {
+        String[] splitCond = new String[3];
+
+        if (conditions.size() == 1) { // 1 condition
+            splitCond = conditions.get(0).split(" "); // colName operator value
+            return table.getWithCondition(splitCond[0], splitCond[1],
+                    TypeConverter.parseValue(splitCond[2]));
+        }
+
+        // 2 condition
+        List<List<Integer>> resultSet = new ArrayList<List<Integer>>();
+        for (String condition : conditions.subList(0, 2)) { // excl logic operator
+            splitCond = condition.split(" "); // colName operator value
+            resultSet.add(table.getWithCondition(splitCond[0], splitCond[1],
+                    TypeConverter.parseValue(splitCond[2])));
+        }
+        System.out.println(splitCond);
+        return merge(resultSet.get(0), resultSet.get(1), conditions.get(2));
+    }
+
+    private List<Integer> merge(List<Integer> result1, List<Integer> result2, String logicOperator) {
+        Set<Integer> set1 = new HashSet<>(result1);
+        Set<Integer> set2 = new HashSet<>(result2);
+
+        if (logicOperator.equals("AND")) {
+            set1.retainAll(set2);
+        } else {
+            set1.addAll(set2);
+        }
+        return new ArrayList<>(set1);
     }
 
     /**
@@ -112,13 +149,10 @@ public class Engine {
         // column name to update
         String colName = parsedUpdate.get(1);
         String newValue = parsedUpdate.get(2);
-        String whereClauseConditions = parsedUpdate.get(3);
 
-        List<String> command = new ArrayList<>(Arrays.asList(colName, whereClauseConditions));
-        List<Integer> recordIds = table.getWithCondition(command);
-
-        table.updateRecord(recordIds, colName, newValue);
-        return "not implemented";
+        List<Integer> listOfId = getRecordIds(table, Parser.parseConditions(parsedUpdate.get(3)));
+        table.updateRecord(listOfId, colName, newValue);
+        return listOfId.size() + " records changed";
     }
 
     /**
@@ -126,32 +160,29 @@ public class Engine {
      * DELETE FROM student WHERE gpa < 2.0 OR name = little_bobby_tables
      *
      * 0. Check for command Syntax error
-     * (Must be in this format: DELETE FROM `table` WHERE `col` Comparison-Operator X)
+     * (Must be in this format: DELETE FROM `table` WHERE `col` Comparison-Operator
+     * X)
      * - Note, If Comparison-Op is '=' Check for equality w/o case-sensitive
      *
      * 1. Check if table exists
      * 2. Handle filtering conditions
      * 3. Check if row(s) exist
-     *  True - Delete row(s)
-     *  False - Return message (No rows found)
+     * True - Delete row(s)
+     * False - Return message (No rows found)
      *
      * 4. Return success message
      */
     public String delete(String tableName, String query) {
         List<String> parsedDelete = Parser.parseDelete(query);
-        System.out.println(parsedDelete);
-        String whereClauseConditions = parsedDelete.get(1);
         Table table = db.getTable(tableName);
-        List<String> command = new ArrayList<>(Arrays.asList(whereClauseConditions));
-        System.out.println(command);
-        List<Integer> recordIds = table.getWithCondition(command);
-        table.deleteRecords(recordIds);
-        return "not implemented";
+        List<Integer> listOfId = getRecordIds(table, Parser.parseConditions(parsedDelete.get(1)));
+        table.deleteRecords(listOfId);
+        return listOfId.size() + " records deleted";
     }
 
     /**
      * This function will handle the command syntax checks for all cases:
-     *  - CREATE, INSERT, SELECT, UPDATE, DELETE
+     * - CREATE, INSERT, SELECT, UPDATE, DELETE
      *
      * @param tokens - Tokens which holds the separated commands in a String array
      * @return a boolean if syntax is correct, false otherwise

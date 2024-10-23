@@ -61,7 +61,7 @@ public class Main {
         // Loop to simulate millions of queries
         for (int i = 0; i < numberOfQueries; i++) {
             // int queryType = random.nextInt(6);  // Randomly choose the type of query to execute
-            int queryType = 3; // EDITED ------------------------------
+            int queryType = 2; // EDITED ------------------------------
 
             switch (queryType) {
                 case 0:  // INSERT query
