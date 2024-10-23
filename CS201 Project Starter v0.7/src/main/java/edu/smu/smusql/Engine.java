@@ -139,7 +139,7 @@ public class Engine {
         // apply the update
         int updatedRowsNum = tableToUpdate.updateRows(colName,newValue, whereClauseConditions);
 
-        return updatedRowsNum + "row(s) updated successfully." ;
+        return updatedRowsNum + " row(s) updated successfully." ;
     }
 
     /**
