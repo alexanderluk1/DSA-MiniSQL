@@ -55,6 +55,30 @@ public class Table {
         return true;
     }
 
+    public List<Integer> retrieveIds() {
+        List<Integer> ids = new ArrayList<>();
+
+        // Get the index of the 'id' column (assuming it's always present)
+        int idIndex = getIndexOfColumnName("id");
+
+        if (idIndex == -1) {
+            System.out.println("Table does not contain an 'id' column.");
+            return ids;
+        }
+
+        // Iterate through each record and collect the 'id' field
+        for (Record record : records) {
+            Object idValue = record.getField(idIndex);
+            if (idValue instanceof Integer) {
+                ids.add((Integer) idValue); // Assuming the 'id' is always an Integer
+            } else {
+                System.out.println("Invalid id value found: " + idValue);
+            }
+        }
+
+        return ids;
+    }
+
     public String retrieveAllFromTable() {
         return StringFormatter.formatStringForPrintout(columns, records);
     }

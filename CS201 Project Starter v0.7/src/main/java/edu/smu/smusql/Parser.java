@@ -1,7 +1,6 @@
 package edu.smu.smusql;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -157,19 +156,23 @@ public class Parser {
     public static List<String> parseConditions(String query) {
         List<String> conditions = new ArrayList<>();
 
-        // Handle logical operators in a case-insensitive way, but don't affect actual values
-        String logicalOperator = null;
-        if (query.toLowerCase().contains("and")) logicalOperator = "AND";
-        else if (query.toLowerCase().contains("or")) logicalOperator = "OR";
+        // Split only by logical operators (AND/OR), but don't split actual condition values
+        String[] logicalOperators = {"AND", "OR"};
 
-        if (logicalOperator != null) {
-            String[] conditionParts = query.split("(?i)" + logicalOperator);  // Case-insensitive split for AND/OR
-            for (String part : conditionParts) {
-                conditions.add(part.trim());  // Keep the original casing for the actual data
+        // Regex to split by AND/OR, while keeping the conditions intact
+        String conditionRegex = "(?i)\\s+AND\\s+|\\s+OR\\s+";
+        String[] conditionParts = query.split(conditionRegex);
+
+        // Trim and add individual conditions
+        for (String part : conditionParts) {
+            conditions.add(part.trim());
+        }
+
+        // Add logical operators to the conditions list
+        for (String logicalOperator : logicalOperators) {
+            if (query.toUpperCase().contains(" " + logicalOperator + " ")) {
+                conditions.add(logicalOperator);  // Keep the logical operator in uppercase
             }
-            conditions.add(logicalOperator);  // Add the logical operator itself
-        } else {
-            conditions.add(query.trim());  // No logical operator, just add the full condition
         }
 
         return conditions;

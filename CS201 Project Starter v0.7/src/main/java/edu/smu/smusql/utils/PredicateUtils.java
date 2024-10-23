@@ -27,28 +27,23 @@ public class PredicateUtils {
     }
 
     public static Predicate<Record> createPredicateForCondition(String condition, int columnIndex, List<Record> records) {
-        // Debugging: print out the condition to help diagnose issues
-        System.out.println("Evaluating condition: " + condition);
-
-        // Split condition into parts, ensuring proper handling of spaces and quotes
-        String[] individualOperands = condition.trim().split(" (?=(?:[^']*'[^']*')*[^']*$)");
-
         // Ensure that the condition contains at least 3 parts: left operand, operator, right operand
-        if (individualOperands.length < 3) {
+        String[] individualOperands = condition.split("\\s*(=|>|<|>=|<=)\\s*");
+
+        if (individualOperands.length < 2) {
             System.err.println("Invalid condition format: " + condition);
             return record -> false; // Return a predicate that always returns false
         }
 
-        String leftOperand = individualOperands[0].trim();
-        String operator = individualOperands[1].trim();
-        // Handle right operand, removing any surrounding quotes
-        String rightOperandRaw = individualOperands[2].trim();
-        Object rightOperand = TypeConverter.parseValue(rightOperandRaw.replaceAll("^'(.*)'$", "$1"));
+        String leftOperand = individualOperands[0].trim();  // This should be the column name
+        String operator = condition.replace(leftOperand, "").trim().substring(0, 1);  // Extract operator (first non-whitespace)
+        String rightOperandRaw = individualOperands[1].trim();  // The value to compare
+        Object rightOperand = TypeConverter.parseValue(rightOperandRaw.replaceAll("^'(.*)'$", "$1"));  // Remove quotes if necessary
 
         return (Record record) -> {
             try {
-                // Ensure the field exists and is accessed correctly
-                Object fieldValue = record.getField(columnIndex);
+                // Ensure the field exists and is accessed correctly based on column name
+                Object fieldValue = record.getField(columnIndex);  // This should now correctly match the index for the column name
                 return evaluateCondition(operator, fieldValue, rightOperand);
             } catch (IndexOutOfBoundsException e) {
                 System.err.println("Index out of bounds while evaluating: " + condition);

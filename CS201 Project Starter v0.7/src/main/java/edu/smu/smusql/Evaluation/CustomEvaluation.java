@@ -61,7 +61,7 @@ public class CustomEvaluation {
 
     // Method to execute a random query (INSERT, SELECT, UPDATE, DELETE, Complex SELECT, Complex UPDATE, Complex DELETE)
     private static void executeRandomQuery(Random random) {
-        int queryType = random.nextInt(5); // Choose between INSERT, SELECT, UPDATE, DELETE, Complex SELECT, Complex UPDATE, Complex DELETE
+        int queryType = random.nextInt(7); // Choose between INSERT, SELECT, UPDATE, DELETE, Complex SELECT, Complex UPDATE, Complex DELETE
 
         switch (queryType) {
             case 0:  // INSERT query
@@ -84,14 +84,14 @@ public class CustomEvaluation {
                 dbEngine.executeSQL(generateComplexSelectQuery(random));
                 complexSelectCount++;
                 break;
-//            case 5:  // Complex UPDATE query with WHERE
-//                dbEngine.executeSQL(generateComplexUpdateQuery(random));
-//                complexUpdateCount++;
-//                break;
-//            case 6: // Complex DELETE query with WHERE
-//                dbEngine.executeSQL(generateComplexDeleteQuery(random));
-//                complexDeleteCount++;
-//                break;
+            case 5:  // Complex UPDATE query with WHERE
+                dbEngine.executeSQL(generateComplexUpdateQuery(random));
+                complexUpdateCount++;
+                break;
+            case 6: // Complex DELETE query with WHERE
+                dbEngine.executeSQL(generateComplexDeleteQuery(random));
+                complexDeleteCount++;
+                break;
         }
     }
 
@@ -282,9 +282,18 @@ public class CustomEvaluation {
             default -> updateField = "age";
         }
 
+        // Generate random new value and id
         int newValue = random.nextInt(100) + 1;  // Generate random value for update
         int idValue = random.nextInt(10000) + 1; // Generate random id to update
-        return String.format("UPDATE %s SET %s = %d WHERE %s = %d", tableName, updateField, newValue, idField, idValue);
+
+        // Format the update SQL query
+        String updateQuery = String.format("UPDATE %s SET %s = %d WHERE %s = %d", tableName, updateField, newValue, idField, idValue);
+
+        // Log what is being updated to what
+        System.out.printf("Updating table '%s': Setting '%s' to %d for record with %s = %d%n",
+                tableName, updateField, newValue, idField, idValue);
+
+        return updateQuery;
     }
 
     // Generate a DELETE query
