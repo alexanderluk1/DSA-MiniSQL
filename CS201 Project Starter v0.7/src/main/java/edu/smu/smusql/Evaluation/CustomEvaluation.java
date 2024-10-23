@@ -40,7 +40,7 @@ public class CustomEvaluation {
     // Method to execute a random query (INSERT, SELECT, UPDATE, DELETE)
 // Method to execute a random query (INSERT, SELECT, UPDATE, DELETE, Complex SELECT, Complex UPDATE)
     private static void executeRandomQuery(Random random) {
-        int queryType = random.nextInt(6); // Choose between INSERT, SELECT, UPDATE, DELETE, Complex SELECT, Complex UPDATE
+        int queryType = random.nextInt(7); // Choose between INSERT, SELECT, UPDATE, DELETE, Complex SELECT, Complex UPDATE, Complex DELETE
 
         switch (queryType) {
             case 0:  // INSERT query
@@ -61,6 +61,9 @@ public class CustomEvaluation {
             case 5:  // Complex UPDATE query with WHERE
                 dbEngine.executeSQL(generateComplexUpdateQuery(random));
                 break;
+            case 6: // Complex DELETE query with WHERE
+                dbEngine.executeSQL(generateComplexDeleteQuery(random));
+                break;
         }
     }
 
@@ -76,18 +79,6 @@ public class CustomEvaluation {
                 return String.format("INSERT INTO orders VALUES (%d, %d, %d, %d)", random.nextInt(10000), random.nextInt(10000), random.nextInt(1000), random.nextInt(50));
         }
         return "";
-    }
-
-    // Generate a simple SELECT query
-    private static String generateSimpleSelectQuery(Random random) {
-        String[] tables = {"users", "products", "orders"};
-        return String.format("SELECT * FROM %s", tables[random.nextInt(tables.length)]);
-    }
-
-    // Generate a complex SELECT query
-    private static String generateComplexSelectQuery(Random random) {
-        String[] conditions = {"age > 30", "price < 500", "quantity > 5"};
-        return String.format("SELECT * FROM users WHERE %s", conditions[random.nextInt(conditions.length)]);
     }
 
     // Prepopulate tables with sample data
@@ -180,6 +171,20 @@ public class CustomEvaluation {
         System.out.println(" ------- ORDERS table have been prepopulated -------");
     }
 
+    // ----------------- Generate Queries Below -----------------
+
+    // Generate a simple SELECT query
+    private static String generateSimpleSelectQuery(Random random) {
+        String[] tables = {"users", "products", "orders"};
+        return String.format("SELECT * FROM %s", tables[random.nextInt(tables.length)]);
+    }
+
+    // Generate a complex SELECT query
+    private static String generateComplexSelectQuery(Random random) {
+        String[] conditions = {"age > 30", "price < 500", "quantity > 5"};
+        return String.format("SELECT * FROM users WHERE %s", conditions[random.nextInt(conditions.length)]);
+    }
+
     // Generate an UPDATE query
     private static String generateUpdateQuery(Random random) {
         String[] tables = {"student", "users", "products", "orders"};
@@ -211,6 +216,70 @@ public class CustomEvaluation {
 
         int idValue = random.nextInt(10000) + 1; // Generate random id to delete
         return String.format("DELETE FROM %s WHERE %s = %d", tableName, idField, idValue);
+    }
+
+    // Generate a complex DELETE query
+    private static String generateComplexDeleteQuery(Random random) {
+        String[] tables = {"student", "users", "products", "orders"};
+        int tableIndex = random.nextInt(tables.length);
+        String tableName = tables[tableIndex];
+
+        // Fields and values vary depending on the table
+        String conditionField1;
+        String conditionField2;
+        String operator1;
+        String operator2;
+        String conditionValue1;
+        String conditionValue2;
+
+        switch (tableName) {
+            case "student":
+                conditionField1 = "age";
+                conditionField2 = "gpa";
+                operator1 = random.nextBoolean() ? ">" : "<";
+                operator2 = random.nextBoolean() ? ">" : "<";
+                conditionValue1 = String.valueOf(random.nextInt(10) + 18); // Random age between 18-28
+                conditionValue2 = String.valueOf(1.0 + (random.nextDouble() * 3.0)); // Random GPA between 1.0 and 4.0
+                break;
+            case "users":
+                conditionField1 = "age";
+                conditionField2 = "city";
+                operator1 = random.nextBoolean() ? ">" : "<";
+                operator2 = "=";
+                conditionValue1 = String.valueOf(random.nextInt(60) + 20); // Random age between 20-80
+                conditionValue2 = "'City" + random.nextInt(10) + "'"; // Random city
+                break;
+            case "products":
+                conditionField1 = "price";
+                conditionField2 = "category";
+                operator1 = random.nextBoolean() ? ">" : "<";
+                operator2 = "=";
+                conditionValue1 = String.valueOf(random.nextInt(500) + 100); // Random price between 100-600
+                conditionValue2 = "'Category" + random.nextInt(5) + "'"; // Random category
+                break;
+            case "orders":
+                conditionField1 = "quantity";
+                conditionField2 = "user_id";
+                operator1 = random.nextBoolean() ? ">" : "<";
+                operator2 = "=";
+                conditionValue1 = String.valueOf(random.nextInt(50) + 1); // Random quantity between 1-50
+                conditionValue2 = String.valueOf(random.nextInt(10000) + 1); // Random user_id
+                break;
+            default:
+                conditionField1 = "id";
+                conditionField2 = "id";
+                operator1 = "=";
+                operator2 = "=";
+                conditionValue1 = "1";
+                conditionValue2 = "1";
+        }
+
+        // Combine conditions with either AND or OR
+        String logicalOperator = random.nextBoolean() ? "AND" : "OR";
+
+        return String.format("DELETE FROM %s WHERE %s %s %s %s %s %s",
+                tableName, conditionField1, operator1, conditionValue1,
+                logicalOperator, conditionField2, operator2, conditionValue2);
     }
 
     // Generate a complex UPDATE query

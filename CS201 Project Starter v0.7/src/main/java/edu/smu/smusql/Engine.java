@@ -163,6 +163,8 @@ public class Engine {
         List<String> parsedDelete = Parser.parseDelete(query);
         String whereClauseConditions = parsedDelete.get(1);
 
+        System.out.println(parsedDelete);
+
         // Checks
         if (!db.doesTableExist(tableName)) {
             return Messages.TABLE_NOT_EXIST.getMessage();
