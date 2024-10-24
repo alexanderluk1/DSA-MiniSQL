@@ -1,7 +1,6 @@
 package edu.smu.smusql;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
@@ -113,7 +112,6 @@ public class Engine {
             resultSet.add(table.getWithCondition(splitCond[0], splitCond[1],
                     TypeConverter.parseValue(splitCond[2])));
         }
-        System.out.println(splitCond);
         return merge(resultSet.get(0), resultSet.get(1), conditions.get(2));
     }
 
@@ -123,7 +121,7 @@ public class Engine {
 
         if (logicOperator.equals("AND")) {
             set1.retainAll(set2);
-        } else {
+        } else { // OR
             set1.addAll(set2);
         }
         return new ArrayList<>(set1);
@@ -175,6 +173,7 @@ public class Engine {
     public String delete(String tableName, String query) {
         List<String> parsedDelete = Parser.parseDelete(query);
         Table table = db.getTable(tableName);
+        System.out.println(Parser.parseConditions(parsedDelete.get(1)));
         List<Integer> listOfId = getRecordIds(table, Parser.parseConditions(parsedDelete.get(1)));
         table.deleteRecords(listOfId);
         return listOfId.size() + " records deleted";

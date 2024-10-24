@@ -16,8 +16,7 @@ public class Database {
     }
 
     public void createTable(String tableName, List<String> columns) {
-        Table table = new Table(tableName);
-        System.out.println("Col" + columns);
+        Table table = new Table();
         for (String col : columns) {
             table.addColumn(col);
         }

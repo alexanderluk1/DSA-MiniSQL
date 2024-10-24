@@ -13,10 +13,6 @@ public class BucketNode {
         return record;
     }
 
-    public void setRecord(Record record) {
-        this.record = record;
-    }
-
     public BucketNode getNext() {
         return next;
     }

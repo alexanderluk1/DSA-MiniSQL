@@ -22,10 +22,6 @@ public class AVLNode<K> {
         return key;
     }
 
-    public void setKey(K key) {
-        this.key = key;
-    }
-
     public List<Integer> getValues() {
         return values;
     }
@@ -73,13 +69,16 @@ public class AVLNode<K> {
 
     public int numChildren() {
         int count = 0;
-        if (left != null) {
-            count++;
-        }
-        if (right != null) {
-            count++;
-        }
+        if (left != null) count++;
+        if (right != null) count++;
         return count;
+    }
+
+    public void updateChild(AVLNode<K> newChild, AVLNode<K> originalChild) {
+        if (left != null && left.equals(originalChild)) left = newChild;
+        else right = newChild;
+
+        if (newChild != null) newChild.setParent(this);
     }
 
     @Override

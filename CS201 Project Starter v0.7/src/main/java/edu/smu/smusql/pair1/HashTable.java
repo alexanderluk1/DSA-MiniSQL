@@ -1,5 +1,7 @@
 package edu.smu.smusql.pair1;
 
+import java.util.List;
+
 public class HashTable {
     private BucketNode[] buckets;
     private int size;
@@ -12,15 +14,11 @@ public class HashTable {
         this.MAXLOAD = 0.75;
     }
 
-    public int getSize() {
-        return size;
-    }
-
     public BucketNode getStartOfBucket(int i) {
         return buckets[i];
     }
 
-    // index in bukets where record with key is stored
+    // index in buckets where record with key is stored
     private int hash(int id) {
         return id % size; // Basic hash function
     }
@@ -39,7 +37,6 @@ public class HashTable {
         if (loadFactor() > MAXLOAD) {
             resize(size * 2); // Increase size if load factor exceeds
         }
-
         int index = hash(record.getId());
         addToBucket(index, record);
         numElements++;
@@ -71,11 +68,6 @@ public class HashTable {
                 }
 
                 numElements--;
-
-                if (loadFactor() < 0.25 && size > 1) { // less than 1/4 elements
-                    resize(size / 2); // shrink table
-                }
-
                 return;
             }
             prev = current;
@@ -84,7 +76,7 @@ public class HashTable {
 
     }
 
-    public void resize(int newCapacity) {
+    private void resize(int newCapacity) {
         BucketNode[] newBuckets = new BucketNode[newCapacity];
         for (BucketNode bucket : buckets) {
             BucketNode current = bucket;
@@ -98,6 +90,19 @@ public class HashTable {
         }
         this.buckets = newBuckets;
         this.size = newCapacity;
+    }
+
+    public String getAllRecords(List<String> columnOrder) {
+        StringBuilder sb = new StringBuilder();
+        // Iterate through each bucket in the HashTable
+        for (int i = 0; i < buckets.length; i++) {
+            BucketNode current = getStartOfBucket(i); // Get the start of the bucket
+            while (current != null) { // Iterate through the linked list in the bucket
+                sb.append(current.getRecord().toString(columnOrder)); // Get the record from the current node
+                current = current.getNext(); // Move to the next node
+            }
+        }
+        return sb.toString();
     }
 
     // debugging purposes
