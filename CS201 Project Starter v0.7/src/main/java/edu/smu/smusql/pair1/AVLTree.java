@@ -1,5 +1,8 @@
 package edu.smu.smusql.pair1;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class AVLTree<K> {
 
     private AVLNode<K> root;
@@ -9,60 +12,77 @@ public class AVLTree<K> {
         return node == null ? 0 : node.getHeight();
     }
 
+    // Balance factor = height of left subtree - height of right subtree
     private int getBalance(AVLNode<K> node) { // > 1: left-heavy, < -1: right-heavy
         return node == null ? 0 : height(node.getLeft()) - height(node.getRight());
     }
 
-    //Insert method
+    // Insert method to insert a new node
     public void insert(K key, int id) {
         root = insert(root, key, id);
     }
-    
+
     private AVLNode<K> insert(AVLNode<K> node, K key, int id) {
         // Base case: If node is null, create and return a new node
         if (node == null) {
-            size++; // Increase the size of the tree
-            return new AVLNode<>(key, id); // Return the new node to be attached to the parent
+            size++;
+            return new AVLNode<>(key, id);
         }
-    
-        // Compare keys to find the correct insertion point
+
         if (key instanceof Comparable && node.getKey() instanceof Comparable) {
             Comparable<K> k = (Comparable<K>) key;
             int comp = k.compareTo(node.getKey());
-    
+
             if (comp < 0) {
-                // Insert in the left subtree
                 node.setLeft(insert(node.getLeft(), key, id));
-                node.getLeft().setParent(node); // Update parent link
+                node.getLeft().setParent(node); 
             } else if (comp > 0) {
-                // Insert in the right subtree
                 node.setRight(insert(node.getRight(), key, id));
-                node.getRight().setParent(node); // Update parent link
+                node.getRight().setParent(node);
             } else {
-                // If the key already exists, add the value to the node's list
                 node.getValues().add(id);
-                return node; // Return the current node, as no structural changes are needed
+                return node;
             }
         }
-    
-        // Update the height of the current node after insertion
+
         node.updateHeight();
-    
-        // Get the balance factor of the node to check if it's balanced
         int balance = getBalance(node);
-    
-        // Rebalance the node if necessary and return the new root of the subtree
         return rebalance(balance, node);
     }
-    
-    //Find more method
-    public List<K> findMore(K key) {
-        List<K> result = new ArrayList<>();
-        findMore(root, key, result);
+
+    // Find more method
+    public List<Integer> findMore(K key) {
+        List<Integer> result = new ArrayList<>();
+        findMoreRecursive(root, key, result);
+        return result;
+    }
+
+    private void findMoreRecursive(AVLNode<K> node, K key, List<Integer> result) {
+        if (node == null) {
+            return;
+        }
+
+        if (key instanceof Comparable && node.getKey() instanceof Comparable) {
+            Comparable<K> k = (Comparable<K>) key;
+            int comp = k.compareTo(node.getKey());
+
+            if (comp < 0) { 
+                result.addAll(node.getValues());
+                findMoreRecursive(node.getLeft(), key, result);
+            }
+
+            findMoreRecursive(node.getRight(), key, result);
+        }
+    }
+
+    // Find less method
+    public List<Integer> findLess(K key) {
+        List<Integer> result = new ArrayList<>();
+        findLessRecursive(root, key, result);
         return result;
     }
     
-    private void findMore(AVLNode<K> node, K key, List<K> result) {
+    private void findLessRecursive(AVLNode<K> node, K key, List<Integer> result) {
         if (node == null) {
             return;
         }
@@ -71,48 +91,16 @@ public class AVLTree<K> {
             Comparable<K> k = (Comparable<K>) key;
             int comp = k.compareTo(node.getKey());
     
-            if (comp < 0) {
-                // Current node's key is greater, so add it and check the left and right subtrees
-                result.add(node.getKey());
-                findMore(node.getLeft(), key, result);
-                findMore(node.getRight(), key, result);
-            } else {
-                // Only check the right subtree if the key is smaller or equal
-                findMore(node.getRight(), key, result);
+            if (comp > 0) { 
+                result.addAll(node.getValues());
+                findLessRecursive(node.getRight(), key, result);
             }
+    
+            // Always check the left subtree
+            findLessRecursive(node.getLeft(), key, result);
         }
-    }
+    }    
 
-
-    //Find less method
-    public List<K> findLess(K key) {
-        List<K> result = new ArrayList<>();
-        findLess(root, key, result);
-        return result;
-    }
-    
-    private void findLess(AVLNode<K> node, K key, List<K> result) {
-        if (node == null) {
-            return;
-        }
-    
-        if (key instanceof Comparable && node.getKey() instanceof Comparable) {
-            Comparable<K> k = (Comparable<K>) key;
-            int comp = k.compareTo(node.getKey());
-    
-            if (comp > 0) {
-                // Current node's key is smaller, so add it and check the left and right subtrees
-                result.add(node.getKey());
-                findLess(node.getLeft(), key, result);
-                findLess(node.getRight(), key, result);
-            } else {
-                // Only check the left subtree if the key is larger or equal
-                findLess(node.getLeft(), key, result);
-            }
-        }
-    }
-    
-    
     private AVLNode<K> largestOnLeft(AVLNode<K> node) {
         AVLNode<K> current = node;
         while (current.getRight() != null) {
@@ -338,43 +326,88 @@ public class AVLTree<K> {
         }
     }
 
+    // public static void main(String[] args) {
+    //     AVLTree<Integer> ageTree = new AVLTree<>();
+    //     Integer[] arr = { 41, 99, 67, 90, 81, 23, 80, 84, 9, 60, 94, 78 };
+
+    //     for (int i = 0; i < arr.length; i++) {
+    //         // ageTree.insert(arr[i], i);
+    //     }
+    //     // ageTree.insert(99, 12);
+
+    //     System.out.println("Before: ");
+    //     ageTree.print();
+    //     System.out.println();
+
+    //     System.out.println("Delete: 67 2"); // root is 81, left 60, right 90
+    //     ageTree.print();
+    //     System.out.println();
+
+    //     System.out.println("Delete: 9 8"); // 60 left is 23, 23 right is 41
+    //     ageTree.print();
+    //     System.out.println();
+
+    //     System.out.println("Delete: 23 5"); // 60 left is 41
+    //     ageTree.print();
+    //     System.out.println();
+
+    //     // ageTree.insert(30, 13)
+    //     System.out.println("Delete: 80 6");
+    //     ageTree.print();
+    //     System.out.println();
+
+    //     // ageTree.insert(42, 14)
+    //     System.out.println("Delete: 78 11"); // 41 left is 30, right is 60
+    //     ageTree.print();
+    //     System.out.println();
+
+    //     // System.out.println("Delete: 99 12"); // list left 1
+    //     ageTree.print();
+    //     System.out.println();
+    // }
+
+    //Testing specfically for find more find less
     public static void main(String[] args) {
         AVLTree<Integer> ageTree = new AVLTree<>();
         Integer[] arr = { 41, 99, 67, 90, 81, 23, 80, 84, 9, 60, 94, 78 };
-
+    
+        // Insert nodes into the AVL tree using the 'insert' method
         for (int i = 0; i < arr.length; i++) {
-            // ageTree.insert(arr[i], i);
+            ageTree.insert(arr[i], i);  // Key is arr[i], Record ID is i
         }
-        // ageTree.insert(99, 12);
-
-        System.out.println("Before: ");
-        ageTree.print();
+        
+        // Additional insertion
+        ageTree.insert(99, 12);
+    
+        // Print the tree before any deletions (optional, depending on your print() implementation)
+        System.out.println("Before any deletions:");
+        ageTree.print();  // Assuming this prints the tree structure
         System.out.println();
-
-        System.out.println("Delete: 67 2"); // root is 81, left 60, right 90
-        ageTree.print();
+    
+        // Test findMore() method
+        System.out.println("Testing findMore(67):");
+        List<Integer> moreResults = ageTree.findMore(67);  // Keys greater than 67
+        System.out.println("Expected Record IDs for keys > 67: [3, 7, 4, 10, 1, 12]");  // Based on the keys greater than 67
+        System.out.println("Actual Record IDs: " + moreResults);
         System.out.println();
-
-        System.out.println("Delete: 9 8"); // 60 left is 23, 23 right is 41
-        ageTree.print();
+    
+        // Test findLess() method
+        System.out.println("Testing findLess(67):");
+        List<Integer> lessResults = ageTree.findLess(67);  // Keys less than 67
+        System.out.println("Expected Record IDs for keys < 67: [5, 8, 0, 9]");  // Based on the keys less than 67
+        System.out.println("Actual Record IDs: " + lessResults);
         System.out.println();
-
-        System.out.println("Delete: 23 5"); // 60 left is 41
-        ageTree.print();
+    
+        System.out.println("Testing findMore(60):");
+        moreResults = ageTree.findMore(60);
+        System.out.println("Expected Record IDs for keys > 60: [2, 3, 7, 4, 10, 1, 12]");
+        System.out.println("Actual Record IDs: " + moreResults);
         System.out.println();
-
-        // ageTree.insert(30, 13)
-        System.out.println("Delete: 80 6");
-        ageTree.print();
-        System.out.println();
-
-        // ageTree.insert(42, 14)
-        System.out.println("Delete: 78 11"); // 41 left is 30, right is 60
-        ageTree.print();
-        System.out.println();
-
-        // System.out.println("Delete: 99 12"); // list left 1
-        ageTree.print();
+    
+        System.out.println("Testing findLess(60):");
+        lessResults = ageTree.findLess(60);
+        System.out.println("Expected Record IDs for keys < 60: [5, 8, 0, 9]");
+        System.out.println("Actual Record IDs: " + lessResults);
         System.out.println();
     }
 }
