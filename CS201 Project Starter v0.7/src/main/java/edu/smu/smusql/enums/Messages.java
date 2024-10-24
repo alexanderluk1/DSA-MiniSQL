@@ -6,7 +6,9 @@ public enum Messages {
     SUCCESS_TABLE_CREATED("Success: The table was created successfully."),
     COLUMN_MISMATCH("Error: Number of input values does not match number of columns."),
     ADD_ERROR("Error: Unable to add values to the Database."),
-    SUCCESS_ADD_RECORD("Success: The record was successfully added.");
+    SUCCESS_ADD_RECORD("Success: The record was successfully added."),
+    SUCCESS_UPDATE_RECORD("Sucess: The record is successfully updated"),
+    SUCCESS_DELETE_RECORD("Sucess: The record is successfully deleted");
 
     private final String message;
 

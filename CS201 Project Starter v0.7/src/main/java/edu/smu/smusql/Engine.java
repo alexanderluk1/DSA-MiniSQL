@@ -3,133 +3,108 @@ package edu.smu.smusql;
 import edu.smu.smusql.ErrorChecks.ErrorChecks;
 import edu.smu.smusql.ErrorChecks.TypeConverter;
 import edu.smu.smusql.enums.Messages;
-import edu.smu.smusql.model.Table;
-
+import edu.smu.smusql.model.Table2;
+import edu.smu.smusql.Parser;
+import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
+import java.util.Map;
 
 public class Engine {
-
-    // Reference to the database object
-    Database db = new Database();
+    private Database db = new Database();
 
     public String executeSQL(String query) {
-        String[] tokens = query.trim().split("\\s+");
+        String[] tokens = query.trim().split("\\s+", 2); // Split command and the rest of the query
         String command = tokens[0].toUpperCase();
 
         return switch (command) {
-            case "CREATE" -> create(tokens[2], query);
-            case "INSERT" -> insert(tokens[2], query);
-            case "SELECT" -> select(tokens[3], query);
-            case "UPDATE" -> update(tokens);
-            case "DELETE" -> delete(tokens);
+            case "CREATE" -> create(tokens[1]);
+            case "INSERT" -> insert(tokens);
+            case "SELECT" -> select(tokens[1]);
+            case "UPDATE" -> update(tokens[1]);
+            case "DELETE" -> delete(tokens[1]);
             default -> "ERROR: Unknown command";
         };
     }
 
-    /**
-     * CREATE TABLE student (id, name, age, gpa, deans_list)
-     *
-     * 1. Parse Command
-     * 2. Create the table with the params
-     * 3. Output success
-     */
-    public String create (String tableName, String query) {
+    public String create(String query) {
         List<String> parsedCommand = Parser.parseCreate(query);
+        String tableName = parsedCommand.get(0);
 
-        // Error Checks
         if (db.doesTableExist(tableName)) return Messages.TABLE_ALREADY_EXIST.getMessage();
-
-        // Add Table to DB
-        db.createTable(tableName, parsedCommand);
+        db.createTable(tableName, parsedCommand.subList(1, parsedCommand.size()));
         return Messages.SUCCESS_TABLE_CREATED.getMessage();
     }
 
-    /**
-     * INSERT INTO student VALUES (1, John, 30, 2.4, False)
-     *
-     * 0. Parse Command
-     * 1. Error Handling: Check if there is a table called XX
-     * 2. Error Handling: Check if params from command match params from table
-     * 3. Error Handling: Check if param type matches param types from table
-     * 4. Add params to table
-     * 5. Output success
-     */
-    public String insert(String tableName, String query) {
-        List<String> parsedCommand = Parser.parseCreate(query);
+    public String insert(String[] query) {
+        List<Object> parsedCommand = Parser.parseInsert(query);
+        String tableName = (String) parsedCommand.get(0);
 
-        // Error Checks
         if (!db.doesTableExist(tableName)) return Messages.TABLE_NOT_EXIST.getMessage();
-        if (!ErrorChecks.doesColumnsMatch(parsedCommand, db.getTable(tableName))) return Messages.COLUMN_MISMATCH.getMessage();
+        if (!ErrorChecks.doesColumnsMatch(parsedCommand.subList(1, parsedCommand.size()), db.getTable(tableName))) {
+            return Messages.COLUMN_MISMATCH.getMessage();
+        }
 
-        // Convert Parameters to their corresponding type
-        List<Object> convertedParameters = TypeConverter.convertParams(parsedCommand);
+        List<Object> convertedParameters = TypeConverter.convertParams(parsedCommand.subList(1, parsedCommand.size()));
+        Table2 tableToAdd = db.getTable(tableName);
 
-        // Get the table
-        Table tableToAdd = db.getTable(tableName);
-
-        // Add record to the table
-        if (!tableToAdd.addRecordToTable(convertedParameters)) return Messages.ADD_ERROR.getMessage();
+        if (!tableToAdd.insertRecord(convertedParameters)) return Messages.ADD_ERROR.getMessage();
         return Messages.SUCCESS_ADD_RECORD.getMessage();
     }
 
-    /**
-     * SELECT * FROM student
-     * SELECT * FROM student WHERE gpa > 3.8 AND age < 20
-     * SELECT * FROM student WHERE gpa > 3.8 OR age < 20
-     *
-     * 0. Check for command Syntax error
-     * 1. Check if Table exists
-     * 2. Handle Base case (SELECT *)
-     * 3. Handle Filtering Condition(s)
-     * 4. Retrieve row(s) from Data Structure
-     * 5. Format and return to user
-     */
-    public String select(String tableName, String query) {
-        List<String> parsedCommand = Parser.parseSelect(query);
+    public String select(String query) {
+        List<String> parsedCommand = Parser.parseSelectConditions(query);
+        String tableName = parsedCommand.get(0);
 
-        Table tableToSelectFrom = db.getTable(tableName);
+        if (!db.doesTableExist(tableName)) return Messages.TABLE_NOT_EXIST.getMessage();
 
-        if (Objects.equals(parsedCommand.get(0), "basic")) {
-            return tableToSelectFrom.retrieveAllFromTable();
+        Table2 tableToSelectFrom = db.getTable(tableName);
+
+        if (parsedCommand.size() == 1 && parsedCommand.get(0).equals("*")) {
+            tableToSelectFrom.displayTableInfo();
+            return "Table Information Displayed";
+        } else {
+            // Assume conditions are present
+            String conditions = String.join(" ", parsedCommand.subList(1, parsedCommand.size()));
+//            List<Map<String, Object>> results = tableToSelectFrom.selectRecords(conditions);
+//            return formatSelectResults(results);
+            return "HI";
         }
-        return tableToSelectFrom.retrieveWithCondition(parsedCommand);
     }
 
-    /**
-     * UPDATE student SET age = 25 WHERE id = 1
-     * UPDATE student SET deans_list = True WHERE gpa > 3.8 OR age = 201
-     *
-     * 0. Check for command Syntax error
-     * 1. Check if table exists
-     * 2. Check if column exists
-     * 3. Find row(s) where it fulfills the Filtering condition(s)
-     * 4. Update row(s)
-     * 5. Return success message "Updated 3 rows"
-     */
-    public String update(String[] tokens) {
-        //TODO
-        return "not implemented";
+    public String update(String query) {
+        List<String> parsedCommand = Parser.parseUpdate(query);
+        String tableName = parsedCommand.get(0);
+
+        if (!db.doesTableExist(tableName)) return Messages.TABLE_NOT_EXIST.getMessage();
+
+        // Extract key and updated values
+        int keyToUpdate = Integer.parseInt(parsedCommand.get(1)); // Assuming the key is in the second position
+        List<Object> updatedValues = TypeConverter.convertParams(Collections.singletonList(parsedCommand.subList(2, parsedCommand.size())));
+
+        Table2 tableToUpdate = db.getTable(tableName);
+//        if (!tableToUpdate.updateRecord(String.valueOf(keyToUpdate), updatedValues)) {
+//            return Messages.ADD_ERROR.getMessage();
+//        }
+        return Messages.SUCCESS_UPDATE_RECORD.getMessage();
     }
 
-    /**
-     * DELETE FROM student WHERE gpa < 2.0
-     * DELETE FROM student WHERE gpa < 2.0 OR name = little_bobby_tables
-     *
-     * 0. Check for command Syntax error
-     * (Must be in this format: DELETE FROM `table` WHERE `col` Comparison-Operator X)
-     * - Note, If Comparison-Op is '=' Check for equality w/o case-sensitive
-     *
-     * 1. Check if table exists
-     * 2. Handle filtering conditions
-     * 3. Check if row(s) exist
-     *  True - Delete row(s)
-     *  False - Return message (No rows found)
-     *
-     * 4. Return success message
-     */
-    public String delete(String[] tokens) {
+    public String delete(String query) {
+        List<String> parsedCommand = Parser.parseDelete(query);
+        String tableName = parsedCommand.get(0);
 
-        return "not implemented";
+        if (!db.doesTableExist(tableName)) return Messages.TABLE_NOT_EXIST.getMessage();
+
+        int keyToDelete = Integer.parseInt(parsedCommand.get(1)); // Assuming the key is specified
+        Table2 tableToDeleteFrom = db.getTable(tableName);
+//        tableToDeleteFrom.deleteRecord(keyToDelete);
+        return Messages.SUCCESS_DELETE_RECORD.getMessage();
+    }
+
+    private String formatSelectResults(List<Map<String, Object>> results) {
+        StringBuilder formattedResults = new StringBuilder();
+        for (Map<String, Object> record : results) {
+            formattedResults.append(record.toString()).append("\n");
+        }
+        return formattedResults.toString();
     }
 }

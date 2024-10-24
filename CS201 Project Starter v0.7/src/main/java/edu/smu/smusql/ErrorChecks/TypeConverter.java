@@ -7,11 +7,11 @@ public class TypeConverter {
 
     public TypeConverter() {}
 
-    public static List<Object> convertParams(List<String> params) {
+    public static List<Object> convertParams(List<Object> params) {
         List<Object> convertedParameters = new ArrayList<>();
 
-        for (String param : params) {
-            convertedParameters.add(parseValue(param));
+        for (Object param : params) {
+            convertedParameters.add(parseValue((String) param));
         }
 
         return convertedParameters;
