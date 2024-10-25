@@ -4,13 +4,15 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
+import edu.smu.smusql.ErrorChecks.TypeConverter;
+
 public class Table {
-    private HashTable records; // Stores the records - Can use HashMap???
+    private HashMap<Integer, Record> records; // Stores the records - Can use HashMap???
     private HashMap<String, AVLTree<Object>> columns; // Column name and Tree
     private List<String> columnOrder; // maintain order of col
 
     public Table() {
-        this.records = new HashTable(1);
+        this.records = new HashMap<>();
         this.columns = new HashMap<>();
         this.columnOrder = new ArrayList<>();
     }
@@ -22,7 +24,7 @@ public class Table {
 
     public void insertRecord(List<Object> values) {
         Record newRecord = new Record(columnOrder, values); // Match Col to Value
-        records.put(newRecord); // Add to HashTable
+        records.put(newRecord.getId(), newRecord); // Add to HashTable
 
         int id = (Integer) values.get(0);
         for (int i = 1; i < columnOrder.size(); i++) { // Add to AVL Tree
@@ -41,28 +43,45 @@ public class Table {
         }
     }
 
-    public void updateRecord(List<Integer> list, String columnName, String value) {
+    public void updateRecord(List<Integer> list, String columnName, Object value) {
+        AVLTree<Object> tree = columns.get(columnName);
         for (Integer id : list) {
             Record record = records.get(id);
+            if (record == null) return;
+            tree.remove(record.getColumnValue(columnName), id);
+            tree.insert(value, record.getId());
             record.setColumnValue(columnName, value);
         }
     }
 
     public String getAll() {
-        return printHeader() + records.getAllRecords(columnOrder);
+        StringBuilder sb = new StringBuilder();
+        sb.append(printHeader());
+        for (Record record : records.values()) {
+            sb.append(record.toString(columnOrder));
+        }
+        return sb.toString();
+    }
+
+    private List<Integer> getForId(String operator, Object value) {
+        List<Integer> result = new ArrayList<>();
+        if (records.get(value) != null) result.add((Integer) value); // id is unique, no need for AVL tree lookup
+        return result;
     }
 
     public List<Integer> getWithCondition(String colName, String operator, Object value) {
-        AVLTree<Object> tree = columns.get(colName);
-
         List<Integer> result = new ArrayList<>();
-        if (operator.contains("=")) {
-            if (tree.get(value) != null) {
-                result.addAll(tree.get(value).getValues());
-            }
+        if (colName.equals("id")) {
+            return getForId(operator, value); // id is unique, no need for AVL tree lookup
         }
-        if (operator.contains(">")) result.addAll(tree.findMore(value));
-        if (operator.contains("<")) result.addAll(tree.findLess(value));
+
+        AVLTree<Object> tree = columns.get(colName);
+        if (operator.contains("=")) {
+            AVLNode<Object> found = tree.get(value);
+            if (found != null) result.addAll(found.getValues());
+        }
+        if (operator.contains(">")) result.addAll(tree.findMore(value)); // greater than
+        if (operator.contains("<")) result.addAll(tree.findLess(value)); // less than
         return result;
     }
 

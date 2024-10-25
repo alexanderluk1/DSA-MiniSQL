@@ -45,7 +45,7 @@ public class Main {
     public static void autoEvaluate() {
 
         // Set the number of queries to execute
-        int numberOfQueries = 1; // 1000000 - given number
+        int numberOfQueries = 100000; // 1000000 - given number
 
         // Create tables
         dbEngine.executeSQL("CREATE TABLE users (id, name, age, city)");
@@ -60,26 +60,26 @@ public class Main {
 
         // Loop to simulate millions of queries
         for (int i = 0; i < numberOfQueries; i++) {
-            // int queryType = random.nextInt(6);  // Randomly choose the type of query to execute
-            int queryType = 3; // EDITED ------------------------------
+            // int queryType = random.nextInt(6);  //6  Randomly choose the type of query to execute
+            int queryType = 0; // EDITED ------------------------------
 
             switch (queryType) {
-                case 0:  // INSERT query
+                case 1:  // INSERT query
                     insertRandomData(random);
                     break;
-                case 1:  // SELECT query (simple)
+                case 5:  // SELECT query (simple)
                     selectRandomData(random);
                     break;
                 case 2:  // UPDATE query
                     updateRandomData(random);
                     break;
-                case 3:  // DELETE query
+                case 0:  // DELETE query
                     deleteRandomData(random);
                     break;
                 case 4:  // Complex SELECT query with WHERE, AND, OR, >, <, LIKE
                     complexSelectQuery(random);
                     break;
-                case 5:  // Complex UPDATE query with WHERE
+                case 3:  // Complex UPDATE query with WHERE
                     complexUpdateQuery(random);
                     break;
             }

@@ -146,9 +146,12 @@ public class Engine {
 
         // column name to update
         String colName = parsedUpdate.get(1);
-        String newValue = parsedUpdate.get(2);
+        Object newValue = TypeConverter.parseValue(parsedUpdate.get(2));
 
         List<Integer> listOfId = getRecordIds(table, Parser.parseConditions(parsedUpdate.get(3)));
+        if (listOfId.isEmpty()) {
+            return "No rows found";
+        }
         table.updateRecord(listOfId, colName, newValue);
         return listOfId.size() + " records changed";
     }
@@ -173,8 +176,12 @@ public class Engine {
     public String delete(String tableName, String query) {
         List<String> parsedDelete = Parser.parseDelete(query);
         Table table = db.getTable(tableName);
-        System.out.println(Parser.parseConditions(parsedDelete.get(1)));
         List<Integer> listOfId = getRecordIds(table, Parser.parseConditions(parsedDelete.get(1)));
+        
+        if (listOfId.size() == 0) {
+            return "No rows found";
+        }
+        
         table.deleteRecords(listOfId);
         return listOfId.size() + " records deleted";
     }

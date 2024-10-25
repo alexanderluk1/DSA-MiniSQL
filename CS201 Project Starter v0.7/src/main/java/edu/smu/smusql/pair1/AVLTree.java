@@ -126,7 +126,7 @@ public class AVLTree<K> {
         // Replacement node is child of deleted node
         AVLNode<K> deletedsChild = (toDelete.getLeft() == null) ? toDelete.getRight() : toDelete.getLeft();
         replaceParentWithChild(toDelete, deletedsChild);
-        return toDelete.getParent(); // grandparent
+        return deletedsChild; // grandparent
     }
 
     private AVLNode<K> BSTDeletion(AVLNode<K> toDelete) {
@@ -142,7 +142,7 @@ public class AVLTree<K> {
         AVLNode<K> replacement = largestOnLeft(toDelete.getLeft());
 
         // Delete the replacement node
-        AVLNode<K> parentOfReplacement = BSTDeletion(replacement); // replacement is not root for now
+        AVLNode<K> afterReplace = BSTDeletion(replacement); // replacement is not root for now
 
         // Replace toDelete with its replacement node
         if (toDelete == root) {
@@ -150,7 +150,7 @@ public class AVLTree<K> {
         }
         replaceNode(replacement, toDelete);
 
-        return parentOfReplacement;
+        return afterReplace;
     }
 
     // newNode and oldNode will not be null
@@ -240,19 +240,19 @@ public class AVLTree<K> {
         AVLNode<K> toDelete = get(key); // get entry where key = key
 
         toDelete.getValues().remove(id); // remove id
-        if (toDelete.getValues().size() == 0) { // Node should no longer exist
+        if (toDelete.getValues().isEmpty()) { // Node should no longer exist
             size--;
-            AVLNode<K> parent = BSTDeletion(toDelete); // Return parent of Node deleted
+            AVLNode<K> replacement = BSTDeletion(toDelete); // Return parent of Node deleted
             // Check balance of all ancestors
-            while (parent != null) { // parent is not above root
-                int bal = getBalance(parent);
-                AVLNode<K> afterRebalance = rebalance(bal, parent); // updates Height
+            while (replacement != null) { // parent is not above root
+                int bal = getBalance(replacement);
+                AVLNode<K> afterRebalance = rebalance(bal, replacement); // updates Height
 
-                if (parent == root) { // rebalancing root node
+                if (replacement == root) { // rebalancing root node
                     root = afterRebalance; // root changed
                 }
 
-                parent = afterRebalance.getParent(); // go up 1 level to update Height
+                replacement = afterRebalance.getParent(); // go up 1 level to update Height
 
             }
         }
