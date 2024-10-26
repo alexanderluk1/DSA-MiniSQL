@@ -1,110 +1,186 @@
 package edu.smu.smusql;
 
-import edu.smu.smusql.ErrorChecks.ErrorChecks;
-import edu.smu.smusql.ErrorChecks.TypeConverter;
-import edu.smu.smusql.enums.Messages;
+import java.util.*;
 import edu.smu.smusql.model.Table2;
-import edu.smu.smusql.Parser;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
 
 public class Engine {
     private Database db = new Database();
 
+    /**
+     * Executes an SQL query by parsing and dispatching it to the appropriate method.
+     *
+     * @param query The SQL query to execute.
+     * @return Result message from the executed command.
+     */
     public String executeSQL(String query) {
-        String[] tokens = query.trim().split("\\s+", 2); // Split command and the rest of the query
+        String[] tokens = query.trim().split("\\s+");
         String command = tokens[0].toUpperCase();
 
         return switch (command) {
-            case "CREATE" -> create(tokens[1]);
+            case "CREATE" -> create(tokens);
             case "INSERT" -> insert(tokens);
-            case "SELECT" -> select(tokens[1]);
-            case "UPDATE" -> update(tokens[1]);
-            case "DELETE" -> delete(tokens[1]);
+            case "SELECT" -> select(tokens);
+            case "UPDATE" -> update(tokens);
+            case "DELETE" -> delete(tokens);
             default -> "ERROR: Unknown command";
         };
     }
 
-    public String create(String query) {
-        List<String> parsedCommand = Parser.parseCreate(query);
-        String tableName = parsedCommand.get(0);
+    /**
+     * Creates a new table based on the parsed command.
+     *
+     * @param tokens The tokens from the CREATE statement.
+     * @return Result message indicating success or error.
+     */
+    private String create(String[] tokens) {
+        try {
+            List<String> parsedCommand = Parser.parseCreate(tokens);
+            String tableName = parsedCommand.get(0);
 
-        if (db.doesTableExist(tableName)) return Messages.TABLE_ALREADY_EXIST.getMessage();
-        db.createTable(tableName, parsedCommand.subList(1, parsedCommand.size()));
-        return Messages.SUCCESS_TABLE_CREATED.getMessage();
-    }
-
-    public String insert(String[] query) {
-        List<Object> parsedCommand = Parser.parseInsert(query);
-        String tableName = (String) parsedCommand.get(0);
-
-        if (!db.doesTableExist(tableName)) return Messages.TABLE_NOT_EXIST.getMessage();
-        if (!ErrorChecks.doesColumnsMatch(parsedCommand.subList(1, parsedCommand.size()), db.getTable(tableName))) {
-            return Messages.COLUMN_MISMATCH.getMessage();
-        }
-
-        List<Object> convertedParameters = TypeConverter.convertParams(parsedCommand.subList(1, parsedCommand.size()));
-        Table2 tableToAdd = db.getTable(tableName);
-
-        if (!tableToAdd.insertRecord(convertedParameters)) return Messages.ADD_ERROR.getMessage();
-        return Messages.SUCCESS_ADD_RECORD.getMessage();
-    }
-
-    public String select(String query) {
-        List<String> parsedCommand = Parser.parseSelectConditions(query);
-        String tableName = parsedCommand.get(0);
-
-        if (!db.doesTableExist(tableName)) return Messages.TABLE_NOT_EXIST.getMessage();
-
-        Table2 tableToSelectFrom = db.getTable(tableName);
-
-        if (parsedCommand.size() == 1 && parsedCommand.get(0).equals("*")) {
-            tableToSelectFrom.displayTableInfo();
-            return "Table Information Displayed";
-        } else {
-            // Assume conditions are present
-            String conditions = String.join(" ", parsedCommand.subList(1, parsedCommand.size()));
-//            List<Map<String, Object>> results = tableToSelectFrom.selectRecords(conditions);
-//            return formatSelectResults(results);
-            return "HI";
+            if (db.doesTableExist(tableName)) {
+                return "ERROR: Table already exists";
+            }
+            db.createTable(tableName, parsedCommand.subList(1, parsedCommand.size()));
+            return "Table created successfully";
+        } catch (Exception e) {
+            return "ERROR: " + e.getMessage();
         }
     }
 
-    public String update(String query) {
-        List<String> parsedCommand = Parser.parseUpdate(query);
-        String tableName = parsedCommand.get(0);
+    /**
+     * Inserts a record into a specified table.
+     *
+     * @param tokens The tokens from the INSERT statement.
+     * @return Result message indicating success or error.
+     */
+    private String insert(String[] tokens) {
+        try {
+            List<Object> parsedCommand = Parser.parseInsert(tokens);
+            String tableName = (String) parsedCommand.get(0);
 
-        if (!db.doesTableExist(tableName)) return Messages.TABLE_NOT_EXIST.getMessage();
-
-        // Extract key and updated values
-        int keyToUpdate = Integer.parseInt(parsedCommand.get(1)); // Assuming the key is in the second position
-        List<Object> updatedValues = TypeConverter.convertParams(Collections.singletonList(parsedCommand.subList(2, parsedCommand.size())));
-
-        Table2 tableToUpdate = db.getTable(tableName);
-//        if (!tableToUpdate.updateRecord(String.valueOf(keyToUpdate), updatedValues)) {
-//            return Messages.ADD_ERROR.getMessage();
-//        }
-        return Messages.SUCCESS_UPDATE_RECORD.getMessage();
-    }
-
-    public String delete(String query) {
-        List<String> parsedCommand = Parser.parseDelete(query);
-        String tableName = parsedCommand.get(0);
-
-        if (!db.doesTableExist(tableName)) return Messages.TABLE_NOT_EXIST.getMessage();
-
-        int keyToDelete = Integer.parseInt(parsedCommand.get(1)); // Assuming the key is specified
-        Table2 tableToDeleteFrom = db.getTable(tableName);
-//        tableToDeleteFrom.deleteRecord(keyToDelete);
-        return Messages.SUCCESS_DELETE_RECORD.getMessage();
-    }
-
-    private String formatSelectResults(List<Map<String, Object>> results) {
-        StringBuilder formattedResults = new StringBuilder();
-        for (Map<String, Object> record : results) {
-            formattedResults.append(record.toString()).append("\n");
+            if (!db.doesTableExist(tableName)) {
+                return "ERROR: Table does not exist";
+            }
+            if (!db.getTable(tableName).insertRecord(parsedCommand.subList(1, parsedCommand.size()))) {
+                return "ERROR: Failed to insert record";
+            }
+            return "Record inserted successfully";
+        } catch (Exception e) {
+            return "ERROR: " + e.getMessage();
         }
-        return formattedResults.toString();
+    }
+
+    /**
+     * Selects records from a specified table based on conditions.
+     *
+     * @param tokens The tokens from the SELECT statement.
+     * @return Formatted string of selected records or error message.
+     */
+    private String select(String[] tokens) {
+        try {
+            List<Object> parsedCommand = Parser.parseSelectConditions(String.join(" ", tokens));
+            String tableName = (String) parsedCommand.get(0);
+
+            if (!db.doesTableExist(tableName)) {
+                return "ERROR: Table does not exist";
+            }
+
+            Table2 table = db.getTable(tableName);
+            List<Map<String, Object>> allRows = table.getRecords();
+
+            // If there are conditions to evaluate
+            if (parsedCommand.size() > 1) {
+                List<String> conditions = (List<String>) parsedCommand.get(1);
+                List<String> operators = (List<String>) parsedCommand.get(2);
+
+                // Join the conditions for use in the Table2 class
+                String combinedCondition = String.join(" ", conditions);
+                List<Integer> selectedKeys = table.selectRecords(combinedCondition); // Use existing method
+                List<Map<String, Object>> filteredRows = selectedKeys.stream()
+                        .map(table::selectRecord)
+                        .toList();
+
+                return formatRows(filteredRows);
+            } else {
+                return formatRows(allRows);
+            }
+        } catch (Exception e) {
+            return "ERROR: " + e.getMessage();
+        }
+    }
+
+    /**
+     * Formats the rows of selected records into a string.
+     *
+     * @param rows The list of rows to format.
+     * @return Formatted string representation of the rows.
+     */
+    private String formatRows(List<Map<String, Object>> rows) {
+        StringBuilder sb = new StringBuilder();
+        for (Map<String, Object> row : rows) {
+            sb.append(row.toString()).append("\n");
+        }
+        return sb.toString();
+    }
+
+    /**
+     * Updates records in a specified table based on a condition.
+     *
+     * @param tokens The tokens from the UPDATE statement.
+     * @return Result message indicating success or error.
+     */
+    private String update(String[] tokens) {
+        try {
+            List<Object> parsedCommand = Parser.parseUpdate(String.join(" ", tokens));
+            String tableName = (String) parsedCommand.get(0); // Cast to String
+            Map<String, Object> updatedValues = (Map<String, Object>) parsedCommand.get(1); // Cast to Map
+            String condition = (String) parsedCommand.get(2); // Cast to String
+
+            if (!db.doesTableExist(tableName)) {
+                return "ERROR: Table does not exist";
+            }
+
+            Table2 table = db.getTable(tableName);
+            // Update records based on the specified condition
+            table.updateRecords(condition, updatedValues);
+
+            // Count the number of rows updated
+            List<Integer> updatedKeys = table.selectRecords(condition);
+            int rowsUpdated = updatedKeys.size();
+
+            return rowsUpdated + " row(s) updated.";
+        } catch (Exception e) {
+            return "ERROR: " + e.getMessage();
+        }
+    }
+
+    /**
+     * Deletes records from a specified table based on a condition.
+     *
+     * @param tokens The tokens from the DELETE statement.
+     * @return Result message indicating success or error.
+     */
+    private String delete(String[] tokens) {
+        try {
+            List<String> parsedCommand = Parser.parseDelete(String.join(" ", tokens));
+            String tableName = parsedCommand.get(0); // Get the table name
+            String condition = parsedCommand.get(1); // Get the condition
+
+            if (!db.doesTableExist(tableName)) {
+                return "ERROR: Table does not exist"; // Check if the table exists
+            }
+
+            Table2 table = db.getTable(tableName); // Retrieve the table instance
+            // Perform the delete operation based on the specified condition
+            table.deleteRecords(condition);
+
+            // Count the number of rows deleted by re-selecting with the same condition
+            List<Integer> deletedKeys = table.selectRecords(condition);
+            int rowsDeleted = deletedKeys.size();
+
+            return rowsDeleted + " row(s) deleted."; // Print the number of rows deleted
+        } catch (Exception e) {
+            return "ERROR: " + e.getMessage(); // Handle exceptions
+        }
     }
 }

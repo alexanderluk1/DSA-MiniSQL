@@ -2,8 +2,6 @@ package edu.smu.smusql;
 
 import edu.smu.smusql.model.Table2;
 
-import java.util.HashMap;
-import java.util.List;
 import java.util.*;
 
 /**

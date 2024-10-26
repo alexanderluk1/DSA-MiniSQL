@@ -66,6 +66,18 @@ public class Table2 {
         return resultKeys;
     }
 
+    public List<Map<String, Object>> getRecords() {
+        List<Map<String, Object>> records = new ArrayList<>();
+        for (int k = 1; k <= currentKey; k++) {
+            Map<String, Object> record = bPlusTree.search(k);
+            if (record != null) {
+                records.add(record);
+            }
+        }
+        return records;
+    }
+    
+
     // Evaluate combined conditions based on AND/OR logic
     private boolean evaluateCombinedConditions(Map<String, Object> record, List<String> conditions, List<String> operators) {
         boolean overallResult = true; // Start with true for AND evaluation
