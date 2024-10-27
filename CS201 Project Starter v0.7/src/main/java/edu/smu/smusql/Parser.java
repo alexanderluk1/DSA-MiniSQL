@@ -3,6 +3,8 @@ package edu.smu.smusql;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 
 /*
@@ -76,14 +78,15 @@ public class Parser {
      */
     private static List<String> parseSelectWhere(String query) {
         List<String> parsedSelectCommand = new ArrayList<>();
+        String[] queryParts = query.split("(?i)where");
 
-        // Convert only the SQL keywords to lowercase, not the actual values
-        String[] queryParts = query.split("(?i)where");  // Case-insensitive split for the WHERE clause
+        parsedSelectCommand.add(queryParts[0].trim());
 
-        parsedSelectCommand.add(queryParts[0].trim());  // Add everything before WHERE clause (case-insensitive part)
-
-        if (queryParts.length > 1) {
-            parsedSelectCommand.add(queryParts[1].trim());  // Add everything after WHERE clause (including actual values like 'John')
+        // Check if the condition exists after the WHERE clause
+        if (queryParts.length > 1 && !queryParts[1].trim().isEmpty()) {
+            parsedSelectCommand.add(queryParts[1].trim());
+        } else {
+            parsedSelectCommand.add(null); // Add null if no condition found
         }
 
         return parsedSelectCommand;
@@ -123,23 +126,21 @@ public class Parser {
 
     public static List<String> parseDelete(String query) {
         List<String> parsedDelete = new ArrayList<>();
-
-        // Convert the query to lowercase for case-insensitive matching
         String lowerQuery = query.toLowerCase();
-
-        // Split the original query to preserve table name casing
         String[] tokens = query.trim().split("\\s+");
 
-        String tableName = tokens[2];  // The table name is preserved with original casing
+        String tableName = tokens[2];
         parsedDelete.add(tableName);
 
-        // Find the WHERE clause (case insensitive)
         if (lowerQuery.contains("where")) {
-            // Split the original query to get the WHERE clause while preserving the original casing
-            String whereClauseConditions = query.split("(?i)WHERE")[1].trim();
-            parsedDelete.add(whereClauseConditions);
+            String[] whereClause = query.split("(?i)WHERE");
+            if (whereClause.length > 1 && !whereClause[1].trim().isEmpty()) {
+                parsedDelete.add(whereClause[1].trim());
+            } else {
+                parsedDelete.add(null); // Add null if no valid condition found
+            }
         } else {
-            parsedDelete.add(null);  // No WHERE clause
+            parsedDelete.add(null);
         }
 
         return parsedDelete;
@@ -155,24 +156,25 @@ public class Parser {
     /* This method returns the individual conditions (eg. "gpa > 3.8")  as long as there is a WHERE clause */
     public static List<String> parseConditions(String query) {
         List<String> conditions = new ArrayList<>();
+        String logicalOperator = null;
 
-        // Split only by logical operators (AND/OR), but don't split actual condition values
-        String[] logicalOperators = {"AND", "OR"};
+        // Identify logical operators case-insensitively
+        if (query.toLowerCase().contains("and")) logicalOperator = "AND";
+        else if (query.toLowerCase().contains("or")) logicalOperator = "OR";
 
-        // Regex to split by AND/OR, while keeping the conditions intact
-        String conditionRegex = "(?i)\\s+AND\\s+|\\s+OR\\s+";
-        String[] conditionParts = query.split(conditionRegex);
+        // Define regex to match conditions in the format <column> <operator> <value>
+        Pattern pattern = Pattern.compile("(\\w+)\\s*(=|>|<|>=|<=)\\s*(['\"].+?['\"]|\\S+)");
+        Matcher matcher = pattern.matcher(query);
 
-        // Trim and add individual conditions
-        for (String part : conditionParts) {
-            conditions.add(part.trim());
+        // Loop over matches to capture conditions properly
+        while (matcher.find()) {
+            String condition = matcher.group().trim();
+            conditions.add(condition);
         }
 
-        // Add logical operators to the conditions list
-        for (String logicalOperator : logicalOperators) {
-            if (query.toUpperCase().contains(" " + logicalOperator + " ")) {
-                conditions.add(logicalOperator);  // Keep the logical operator in uppercase
-            }
+        // Add logical operator if present and conditions are valid
+        if (logicalOperator != null && !conditions.isEmpty()) {
+            conditions.add(logicalOperator);
         }
 
         return conditions;

@@ -1,7 +1,12 @@
 package edu.smu.smusql.Evaluation;
 
+import edu.smu.smusql.enums.QueryToExecute;
+
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 import static edu.smu.smusql.Main.dbEngine;
+import static edu.smu.smusql.enums.QueryToExecute.*;
 
 public class CustomEvaluation {
 
@@ -24,14 +29,12 @@ public class CustomEvaluation {
         createTables();
         prepopulateTables();
 
-        for (int i = 0; i < numberOfQueries; i++) {
-            executeRandomQuery(random);
+        // Execute n queries equally for each type of query
+        int numberOfExecutionPerQuery = numberOfQueries / values().length;
+        executeEqually(numberOfExecutionPerQuery, random);
 
-            // Print progress every 10,000 queries
-            if (i % 10_000 == 0 && i > 0) {
-                System.out.println("Processed " + i + " queries...");
-            }
-        }
+        // Execute n queries randomly
+//        randomExecution(numberOfQueries, random);
 
         long endTime = System.nanoTime();
         double elapsedTime = (endTime - startTime) / 1_000_000_000.0;
@@ -57,6 +60,58 @@ public class CustomEvaluation {
 
         System.out.println("  All Tables Created");
         System.out.println("=====================");
+    }
+
+    private static void executeEqually(int numberOfExecutionPerQuery, Random random) {
+        for (QueryToExecute query : QueryToExecute.values()) {
+            for (int i = 0; i < numberOfExecutionPerQuery; i++) {
+                executeSpecificQuery(query, random);
+            }
+        }
+    }
+
+    private static void executeSpecificQuery(QueryToExecute query, Random random) {
+        switch (query) {
+            case SIMPLE_INSERT:  // INSERT query
+                dbEngine.executeSQL(generateInsertQuery(random));
+                insertCount++;
+                break;
+            case SIMPLE_SELECT:  // SELECT query (simple)
+                dbEngine.executeSQL(generateSimpleSelectQuery(random));
+                selectCount++;
+                break;
+            case SIMPLE_UPDATE:  // UPDATE query
+                dbEngine.executeSQL(generateUpdateQuery(random));
+                updateCount++;
+                break;
+            case SIMPLE_DELETE:  // DELETE query
+                dbEngine.executeSQL(generateDeleteQuery(random));
+                deleteCount++;
+                break;
+            case COMPLEX_SELECT:  // Complex SELECT query with WHERE, AND, OR, >, <, LIKE
+                dbEngine.executeSQL(generateComplexSelectQuery(random));
+                complexSelectCount++;
+                break;
+            case COMPLEX_UPDATE:  // Complex UPDATE query with WHERE
+                dbEngine.executeSQL(generateComplexUpdateQuery(random));
+                complexUpdateCount++;
+                break;
+            case COMPLEX_DELETE: // Complex DELETE query with WHERE
+                dbEngine.executeSQL(generateComplexDeleteQuery(random));
+                complexDeleteCount++;
+                break;
+        }
+    }
+
+    private static void randomExecution(int numberOfQueries, Random random) {
+        for (int i = 0; i < numberOfQueries; i++) {
+            executeRandomQuery(random);
+
+            // Print progress every 10,000 queries
+            if (i % 10_000 == 0 && i > 0) {
+                System.out.println("Processed " + i + " queries...");
+            }
+        }
     }
 
     // Method to execute a random query (INSERT, SELECT, UPDATE, DELETE, Complex SELECT, Complex UPDATE, Complex DELETE)
@@ -313,63 +368,38 @@ public class CustomEvaluation {
         int tableIndex = random.nextInt(tables.length);
         String tableName = tables[tableIndex];
 
-        // Fields and values vary depending on the table
-        String conditionField1;
-        String conditionField2;
-        String operator1;
-        String operator2;
-        String conditionValue1;
-        String conditionValue2;
+        List<String> conditions = new ArrayList<>();
 
+        // Generate conditions based on the selected table schema
         switch (tableName) {
             case "student":
-                conditionField1 = "age";
-                conditionField2 = "gpa";
-                operator1 = random.nextBoolean() ? ">" : "<";
-                operator2 = random.nextBoolean() ? ">" : "<";
-                conditionValue1 = String.valueOf(random.nextInt(10) + 18); // Random age between 18-28
-                conditionValue2 = String.valueOf(1.0 + (random.nextDouble() * 3.0)); // Random GPA between 1.0 and 4.0
+                conditions.add(generateCondition("age", random.nextInt(10) + 18, random.nextBoolean() ? ">" : "<"));
+                conditions.add(generateCondition("gpa", String.format("%.2f", 1.0 + (random.nextDouble() * 3.0)), random.nextBoolean() ? ">" : "<"));
                 break;
             case "users":
-                conditionField1 = "age";
-                conditionField2 = "city";
-                operator1 = random.nextBoolean() ? ">" : "<";
-                operator2 = "=";
-                conditionValue1 = String.valueOf(random.nextInt(60) + 20); // Random age between 20-80
-                conditionValue2 = "'City" + random.nextInt(10) + "'"; // Random city
+                conditions.add(generateCondition("age", random.nextInt(60) + 20, random.nextBoolean() ? ">" : "<"));
+                conditions.add(generateCondition("city", "'" + "'City" + random.nextInt(10) + "'", "="));
                 break;
             case "products":
-                conditionField1 = "price";
-                conditionField2 = "category";
-                operator1 = random.nextBoolean() ? ">" : "<";
-                operator2 = "=";
-                conditionValue1 = String.valueOf(random.nextInt(500) + 100); // Random price between 100-600
-                conditionValue2 = "'Category" + random.nextInt(5) + "'"; // Random category
+                conditions.add(generateCondition("price", random.nextInt(500) + 100, random.nextBoolean() ? ">" : "<"));
+                conditions.add(generateCondition("category", "'" + "'Category" + random.nextInt(5) + "'", "="));
                 break;
             case "orders":
-                conditionField1 = "quantity";
-                conditionField2 = "user_id";
-                operator1 = random.nextBoolean() ? ">" : "<";
-                operator2 = "=";
-                conditionValue1 = String.valueOf(random.nextInt(50) + 1); // Random quantity between 1-50
-                conditionValue2 = String.valueOf(random.nextInt(10000) + 1); // Random user_id
+                conditions.add(generateCondition("quantity", random.nextInt(50) + 1, random.nextBoolean() ? ">" : "<"));
+                conditions.add(generateCondition("user_id", String.valueOf(random.nextInt(10000) + 1), "="));
                 break;
-            default:
-                conditionField1 = "id";
-                conditionField2 = "id";
-                operator1 = "=";
-                operator2 = "=";
-                conditionValue1 = "1";
-                conditionValue2 = "1";
         }
 
-        // Combine conditions with either AND or OR
-        String logicalOperator = random.nextBoolean() ? "AND" : "OR";
+        // Join conditions with AND
+        String joinCondition = String.join(" AND ", conditions);
 
-        return String.format("DELETE FROM %s WHERE %s %s %s %s %s %s",
-                tableName, conditionField1, operator1, conditionValue1,
-                logicalOperator, conditionField2, operator2, conditionValue2);
+        return String.format("DELETE FROM %s WHERE %s", tableName, joinCondition);
     }
+
+    private static String generateCondition(String field, Object value, String operator) {
+        return String.format("%s %s %s", field, operator, value);
+    }
+
 
     // Generate a complex UPDATE query
     private static String generateComplexUpdateQuery(Random random) {
