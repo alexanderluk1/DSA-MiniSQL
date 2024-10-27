@@ -4,8 +4,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-import edu.smu.smusql.ErrorChecks.TypeConverter;
-
 public class Table {
     private HashMap<Integer, Record> records; // Stores the records - Can use HashMap???
     private HashMap<String, AVLTree<Object>> columns; // Column name and Tree

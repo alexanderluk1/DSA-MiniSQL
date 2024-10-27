@@ -21,7 +21,6 @@ public class AVLTree<K> {
     public void insert(K key, int id) {
         root = insert(root, key, id);
         root.setParent(null);
-
     }
 
     private AVLNode<K> insert(AVLNode<K> node, K key, int id) {
