@@ -183,4 +183,57 @@ public class Engine {
             return "ERROR: " + e.getMessage(); // Handle exceptions
         }
     }
+
+    // TEST
+    private Map<String, String[]> tables = new HashMap<>(); // Store table structure
+    
+    public boolean doesTableExist(String tableName) {
+        return tables.containsKey(tableName);
+    }
+
+    public static void main(String[] args) {
+        System.out.println("Running tests...");
+
+        Engine engine = new Engine();
+
+        // Test: Create table - Success
+        String createTableQuery = "CREATE TABLE users (id INT, name VARCHAR(50))";
+        String createTableResult = engine.executeSQL(createTableQuery);
+        assert createTableResult.equals("Table created successfully") : "Test failed: Create Table";
+
+        // Verify table creation
+        assert engine.doesTableExist("users") : "Test failed: Table 'users' does not exist after creation";
+
+        // Test: Insert record - Success
+        String insertRecordQuery = "INSERT INTO users VALUES (1, 'John Doe')";
+        String insertRecordResult = engine.executeSQL(insertRecordQuery);
+        assert insertRecordResult.equals("Record inserted successfully") : "Test failed: Insert Record";
+
+        // Test: Select records - Success
+        String selectQuery = "SELECT * FROM users";
+        String selectResult = engine.executeSQL(selectQuery);
+        assert selectResult.contains("John Doe") : "Test failed: Select Records";
+
+        // Test: Update record - Success
+        String updateQuery = "UPDATE users SET name = 'Jane Doe' WHERE id = 1";
+        String updateResult = engine.executeSQL(updateQuery);
+        assert updateResult.equals("1 row(s) updated.") : "Test failed: Update Record";
+
+        // Test: Delete record - Success
+        String deleteQuery = "DELETE FROM users WHERE id = 1";
+        String deleteResult = engine.executeSQL(deleteQuery);
+        assert deleteResult.equals("1 row(s) deleted.") : "Test failed: Delete Record";
+
+        // Test: Insert record - Table does not exist
+        String nonExistentInsertQuery = "INSERT INTO nonexistent_table VALUES (1, 'John Doe')";
+        String nonExistentInsertResult = engine.executeSQL(nonExistentInsertQuery);
+        assert nonExistentInsertResult.equals("ERROR: Table does not exist") : "Test failed: Insert into Non-Existent Table";
+
+        // Test: Unknown command
+        String unknownCommandQuery = "DROP TABLE users";
+        String unknownCommandResult = engine.executeSQL(unknownCommandQuery);
+        assert unknownCommandResult.equals("ERROR: Unknown command") : "Test failed: Unknown Command";
+
+        System.out.println("All tests passed.");
+    }
 }
