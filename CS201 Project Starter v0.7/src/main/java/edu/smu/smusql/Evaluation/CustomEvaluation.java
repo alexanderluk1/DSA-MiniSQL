@@ -5,23 +5,22 @@ import edu.smu.smusql.enums.QueryToExecute;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import java.util.Map;
+import java.util.HashMap;
 import static edu.smu.smusql.Main.dbEngine;
 import static edu.smu.smusql.enums.QueryToExecute.*;
 
 public class CustomEvaluation {
 
-    // Define counters for each query type
-    private static int insertCount = 0;
-    private static int selectCount = 0;
-    private static int updateCount = 0;
-    private static int deleteCount = 0;
-    private static int complexSelectCount = 0;
-    private static int complexUpdateCount = 0;
-    private static int complexDeleteCount = 0;
+    // Define counters and time trackers for each query type
+    private static int insertCount = 0, selectCount = 0, updateCount = 0, deleteCount = 0;
+    private static int complexSelectCount = 0, complexUpdateCount = 0, complexDeleteCount = 0;
+    private static Map<QueryToExecute, Double> queryTimeMap = new HashMap<>();
 
     public static void runEvaluation(int numberOfQueries) {
-        System.out.println("Starting evaluation with " + numberOfQueries + " queries...");
-
+        System.out.println("=====================================");
+        System.out.println("   Starting Evaluation with " + numberOfQueries + " Queries");
+        System.out.println("=====================================");
 
         Random random = new Random();
         long startTime = System.nanoTime();
@@ -30,17 +29,23 @@ public class CustomEvaluation {
         prepopulateTables();
 
         // Execute n queries equally for each type of query
-        int numberOfExecutionPerQuery = numberOfQueries / values().length;
-        executeEqually(numberOfExecutionPerQuery, random);
+        int baseExecutionPerQuery = numberOfQueries / QueryToExecute.values().length;
+        int remainingQueries = numberOfQueries % QueryToExecute.values().length;
 
-        // Execute n queries randomly
-//        randomExecution(numberOfQueries, random);
+        executeEqually(baseExecutionPerQuery, random);
+
+        // Distribute the remaining queries randomly
+        List<QueryToExecute> queryTypes = new ArrayList<>(List.of(QueryToExecute.values()));
+        for (int i = 0; i < remainingQueries; i++) {
+            QueryToExecute randomQuery = queryTypes.get(random.nextInt(queryTypes.size()));
+            executeSpecificQuery(randomQuery, random);
+        }
 
         long endTime = System.nanoTime();
-        double elapsedTime = (endTime - startTime) / 1_000_000_000.0;
+        double totalElapsedTime = (endTime - startTime) / 1_000_000_000.0;
 
         // Print the summary of actions taken
-        printSummary(numberOfQueries, elapsedTime);
+        printSummary(numberOfQueries, totalElapsedTime);
     }
 
     // Method to create initial tables
@@ -71,37 +76,46 @@ public class CustomEvaluation {
     }
 
     private static void executeSpecificQuery(QueryToExecute query, Random random) {
+        long queryStartTime = System.nanoTime();  // Start timer for individual query
+
         switch (query) {
-            case SIMPLE_INSERT:  // INSERT query
+            case SIMPLE_INSERT:
                 dbEngine.executeSQL(generateInsertQuery(random));
                 insertCount++;
                 break;
-            case SIMPLE_SELECT:  // SELECT query (simple)
+            case SIMPLE_SELECT:
                 dbEngine.executeSQL(generateSimpleSelectQuery(random));
                 selectCount++;
                 break;
-            case SIMPLE_UPDATE:  // UPDATE query
+            case SIMPLE_UPDATE:
                 dbEngine.executeSQL(generateUpdateQuery(random));
                 updateCount++;
                 break;
-            case SIMPLE_DELETE:  // DELETE query
+            case SIMPLE_DELETE:
                 dbEngine.executeSQL(generateDeleteQuery(random));
                 deleteCount++;
                 break;
-            case COMPLEX_SELECT:  // Complex SELECT query with WHERE, AND, OR, >, <, LIKE
+            case COMPLEX_SELECT:
                 dbEngine.executeSQL(generateComplexSelectQuery(random));
                 complexSelectCount++;
                 break;
-            case COMPLEX_UPDATE:  // Complex UPDATE query with WHERE
+            case COMPLEX_UPDATE:
                 dbEngine.executeSQL(generateComplexUpdateQuery(random));
                 complexUpdateCount++;
                 break;
-            case COMPLEX_DELETE: // Complex DELETE query with WHERE
+            case COMPLEX_DELETE:
                 dbEngine.executeSQL(generateComplexDeleteQuery(random));
                 complexDeleteCount++;
                 break;
         }
+
+        long queryEndTime = System.nanoTime();  // End timer for individual query
+        double queryElapsedTime = (queryEndTime - queryStartTime) / 1_000_000_000.0;
+
+        // Accumulate time for this query type
+        queryTimeMap.put(query, queryTimeMap.getOrDefault(query, 0.0) + queryElapsedTime);
     }
+
 
     private static void randomExecution(int numberOfQueries, Random random) {
         for (int i = 0; i < numberOfQueries; i++) {
@@ -437,15 +451,21 @@ public class CustomEvaluation {
         return String.format("UPDATE %s SET %s = %d WHERE %s %s %s", tableName, updateField, newValue, conditionField, conditionOperator, conditionValue);
     }
 
-    private static void printSummary(int numberOfQueries, double elapsedTime) {
-        System.out.println("\nEvaluation completed in: " + elapsedTime + " seconds.");
-        System.out.println("Total queries executed: " + numberOfQueries);
-        System.out.println("Insert queries executed: " + insertCount);
-        System.out.println("Simple SELECT queries executed: " + selectCount);
-        System.out.println("Update queries executed: " + updateCount);
-        System.out.println("Delete queries executed: " + deleteCount);
-        System.out.println("Complex SELECT queries executed: " + complexSelectCount);
-        System.out.println("Complex UPDATE queries executed: " + complexUpdateCount);
-        System.out.println("Complex DELETE queries executed: " + complexDeleteCount);
+    private static void printSummary(int numberOfQueries, double totalElapsedTime) {
+        System.out.println("\n=====================================");
+        System.out.println("         Evaluation Summary          ");
+        System.out.println("=====================================");
+        System.out.printf("Total Queries Executed: %d%n", numberOfQueries);
+        System.out.printf("Total Time Taken: %.6f seconds%n", totalElapsedTime);
+
+        System.out.println("\n--- Query Execution Counts and Times ---");
+        System.out.printf("Insert Queries      : %d | Time Taken: %.6f seconds%n", insertCount, queryTimeMap.getOrDefault(SIMPLE_INSERT, 0.0));
+        System.out.printf("Simple SELECT Queries: %d | Time Taken: %.6f seconds%n", selectCount, queryTimeMap.getOrDefault(SIMPLE_SELECT, 0.0));
+        System.out.printf("Update Queries      : %d | Time Taken: %.6f seconds%n", updateCount, queryTimeMap.getOrDefault(SIMPLE_UPDATE, 0.0));
+        System.out.printf("Delete Queries      : %d | Time Taken: %.6f seconds%n", deleteCount, queryTimeMap.getOrDefault(SIMPLE_DELETE, 0.0));
+        System.out.printf("Complex SELECT Queries: %d | Time Taken: %.6f seconds%n", complexSelectCount, queryTimeMap.getOrDefault(COMPLEX_SELECT, 0.0));
+        System.out.printf("Complex UPDATE Queries: %d | Time Taken: %.6f seconds%n", complexUpdateCount, queryTimeMap.getOrDefault(COMPLEX_UPDATE, 0.0));
+        System.out.printf("Complex DELETE Queries: %d | Time Taken: %.6f seconds%n", complexDeleteCount, queryTimeMap.getOrDefault(COMPLEX_DELETE, 0.0));
+        System.out.println("=====================================");
     }
 }
