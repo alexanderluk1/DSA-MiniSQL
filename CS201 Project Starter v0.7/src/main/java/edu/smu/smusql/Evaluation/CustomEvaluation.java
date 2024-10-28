@@ -356,7 +356,7 @@ public class CustomEvaluation {
             }
             case "products" -> {
                 updateField = "price";
-                newValue = random.nextInt(1000) + 1;  // Price between 1 and 1000
+                newValue = (random.nextDouble() * 999.0) + 1.0;  // Price between 1.00 and 1000.00
             }
             case "orders" -> {
                 updateField = "quantity";
