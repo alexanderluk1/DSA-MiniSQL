@@ -343,24 +343,40 @@ public class CustomEvaluation {
         // Fields to update based on the selected table
         String updateField;
         String idField = "id";
+        Object newValue;  // Use Object to hold either int or double for flexibility
+
         switch (tableName) {
-            case "student" -> updateField = "gpa";
-            case "users" -> updateField = "age";
-            case "products" -> updateField = "price";
-            case "orders" -> updateField = "quantity";
-            default -> updateField = "age";
+            case "student" -> {
+                updateField = "gpa";
+                newValue = Math.round((random.nextDouble() * 4.0) * 100.0) / 100.0; // GPA between 0.00 and 4.00, rounded to 2 decimal places
+            }
+            case "users" -> {
+                updateField = "age";
+                newValue = random.nextInt(60) + 20;  // Age between 20 and 80
+            }
+            case "products" -> {
+                updateField = "price";
+                newValue = random.nextInt(1000) + 1;  // Price between 1 and 1000
+            }
+            case "orders" -> {
+                updateField = "quantity";
+                newValue = random.nextInt(100) + 1;  // Quantity between 1 and 100
+            }
+            default -> {
+                updateField = "age";
+                newValue = random.nextInt(60) + 20;
+            }
         }
 
-        // Generate random new value and id
-        int newValue = random.nextInt(100) + 1;  // Generate random value for update
         int idValue = random.nextInt(10000) + 1; // Generate random id to update
 
-        // Format the update SQL query
-        String updateQuery = String.format("UPDATE %s SET %s = %d WHERE %s = %d", tableName, updateField, newValue, idField, idValue);
+        // Format the update SQL query, choosing decimal format based on field type
+        String updateQuery = String.format("UPDATE %s SET %s = %s WHERE %s = %d",
+                tableName, updateField, newValue instanceof Double ? String.format("%.2f", newValue) : newValue, idField, idValue);
 
-        // Log what is being updated to what
-        System.out.printf("Updating table '%s': Setting '%s' to %d for record with %s = %d%n",
-                tableName, updateField, newValue, idField, idValue);
+        // Log what is being updated
+        System.out.printf("Updating table '%s': Setting '%s' to %s for record with %s = %d%n",
+                tableName, updateField, newValue instanceof Double ? String.format("%.2f", newValue) : newValue, idField, idValue);
 
         return updateQuery;
     }
