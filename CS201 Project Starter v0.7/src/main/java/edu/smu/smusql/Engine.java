@@ -66,8 +66,11 @@ public class Engine {
         // Get the table
         Table tableToAdd = db.getTable(tableName);
 
-        // Add record to the table
-        tableToAdd.insertRecord(convertedParameters);
+        // Add record to the table ##
+//        tableToAdd.insertRecord(convertedParameters);
+
+        // Add record to the table ##
+        tableToAdd.insertRecordCuckoo(convertedParameters);
         return "success";
     }
 
@@ -153,8 +156,8 @@ public class Engine {
         if (listOfId.isEmpty()) {
             return "No rows found";
         }
-        table.updateRecord(listOfId, colName, newValue);
-//        table.updateRecordCuckoo(listOfId, colName, newValue); // Cuckoo version
+//        table.updateRecord(listOfId, colName, newValue); // ##
+        table.updateRecordCuckoo(listOfId, colName, newValue); // Cuckoo version ##
         return listOfId.size() + " records changed";
     }
 
@@ -183,8 +186,8 @@ public class Engine {
         if (listOfId.isEmpty()) {
             return "No rows found";
         }
-        table.deleteRecords(listOfId);
-//        table.deleteRecordsCuckoo(listOfId); // Cuckoo version
+//        table.deleteRecords(listOfId); // ##
+        table.deleteRecordsCuckoo(listOfId); // Cuckoo version ##
         return listOfId.size() + " records deleted";
     }
 
