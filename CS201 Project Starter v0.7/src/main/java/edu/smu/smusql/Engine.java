@@ -154,6 +154,7 @@ public class Engine {
             return "No rows found";
         }
         table.updateRecord(listOfId, colName, newValue);
+//        table.updateRecordCuckoo(listOfId, colName, newValue); // Cuckoo version
         return listOfId.size() + " records changed";
     }
 
@@ -179,10 +180,11 @@ public class Engine {
         Table table = db.getTable(tableName);
         List<Integer> listOfId = getRecordIds(table, Parser.parseConditions(parsedDelete.get(1)));
         
-        if (listOfId.size() == 0) {
+        if (listOfId.isEmpty()) {
             return "No rows found";
         }
         table.deleteRecords(listOfId);
+//        table.deleteRecordsCuckoo(listOfId); // Cuckoo version
         return listOfId.size() + " records deleted";
     }
 
