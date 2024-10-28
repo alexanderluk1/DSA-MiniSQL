@@ -2,6 +2,8 @@ package edu.smu.smusql;
 
 import java.util.*;
 
+import edu.smu.smusql.Evaluation.CustomEvaluation;
+
 // @author ziyuanliu@smu.edu.sg
 
 public class Main {
@@ -9,7 +11,7 @@ public class Main {
      *  Main method for accessing the command line interface of the database engine.
      *  MODIFICATION OF THIS FILE IS NOT RECOMMENDED!
      */
-    static Engine dbEngine = new Engine();
+    public static Engine dbEngine = new Engine();
     public static void main(String[] args) {
 
         Scanner scanner = new Scanner(System.in);
@@ -25,6 +27,7 @@ public class Main {
             } else if (query.equalsIgnoreCase("evaluate")) {
                 long startTime = System.nanoTime();
                 autoEvaluate();
+                // CustomEvaluation.runEvaluation(10);
                 long stopTime = System.nanoTime();
                 long elapsedTime = stopTime - startTime;
                 double elapsedTimeInSecond = (double) elapsedTime / 1_000_000_000;
@@ -45,7 +48,7 @@ public class Main {
     public static void autoEvaluate() {
 
         // Set the number of queries to execute
-        int numberOfQueries = 100000; // 1000000 - given number
+        int numberOfQueries = 10; // 1000000 - given number
 
         // Create tables
         dbEngine.executeSQL("CREATE TABLE users (id, name, age, city)");
@@ -61,7 +64,7 @@ public class Main {
         // Loop to simulate millions of queries
         for (int i = 0; i < numberOfQueries; i++) {
             // int queryType = random.nextInt(6);  //6  Randomly choose the type of query to execute
-            int queryType = 0; // EDITED ------------------------------
+            int queryType = 4; // EDITED ------------------------------
 
             switch (queryType) {
                 case 1:  // INSERT query

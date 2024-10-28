@@ -93,6 +93,8 @@ public class Engine {
 
         List<Integer> listOfIds = getRecordIds(tableToSelectFrom, 
                                   Parser.parseConditions(parsedCommand.get(1)));
+                                  System.out.println(query);
+        System.out.println(tableToSelectFrom.formatRecords(listOfIds)); // ------------------------------------------------PRINT
         return tableToSelectFrom.formatRecords(listOfIds);
     }
 
@@ -118,6 +120,7 @@ public class Engine {
     private List<Integer> merge(List<Integer> result1, List<Integer> result2, String logicOperator) {
         Set<Integer> set1 = new HashSet<>(result1);
         Set<Integer> set2 = new HashSet<>(result2);
+        System.out.println(set1 + " : " + set2);
 
         if (logicOperator.equals("AND")) {
             set1.retainAll(set2);
@@ -153,6 +156,8 @@ public class Engine {
             return "No rows found";
         }
         table.updateRecord(listOfId, colName, newValue);
+        System.out.println(query);
+        System.out.println(table.formatRecords(listOfId)); // ---------------------------------------------------------PRINT
         return listOfId.size() + " records changed";
     }
 
@@ -181,7 +186,8 @@ public class Engine {
         if (listOfId.size() == 0) {
             return "No rows found";
         }
-        
+        System.out.println(query);
+        System.out.println(table.formatRecords(listOfId)); // ---------------------------------------------------------PRINT
         table.deleteRecords(listOfId);
         return listOfId.size() + " records deleted";
     }

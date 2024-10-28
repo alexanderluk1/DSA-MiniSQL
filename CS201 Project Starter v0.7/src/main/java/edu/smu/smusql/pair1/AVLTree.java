@@ -36,13 +36,22 @@ public class AVLTree<K> {
 
             if (comp < 0) {
                 node.setLeft(insert(node.getLeft(), key, id));
-                node.getLeft().setParent(node); 
+                node.getLeft().setParent(node);
             } else if (comp > 0) {
                 node.setRight(insert(node.getRight(), key, id));
                 node.getRight().setParent(node);
+            } else if (key instanceof Double && node.getKey() instanceof Double) { // Handle possible precision issues
+                                                                                   // with doubles
+                System.out.println("Double detected");
+                                                                                   double epsilon = 0.00001; // Define a tolerance
+                if (Math.abs((Double) key - (Double) node.getKey()) < epsilon) {
+                    System.out.println("Double is equal?");
+                    node.getValues().add(id);
+                    return node; // Found
+                }
             } else {
                 node.getValues().add(id);
-                return node;
+                return node; // Found
             }
         }
 
@@ -67,7 +76,7 @@ public class AVLTree<K> {
             Comparable<K> k = (Comparable<K>) key;
             int comp = k.compareTo(node.getKey());
 
-            if (comp < 0) { 
+            if (comp < 0) {
                 result.addAll(node.getValues());
                 findMoreRecursive(node.getLeft(), key, result);
             }
@@ -82,7 +91,7 @@ public class AVLTree<K> {
         findLessRecursive(root, key, result);
         return result;
     }
-    
+
     private void findLessRecursive(AVLNode<K> node, K key, List<Integer> result) {
         if (node == null) {
             return;
@@ -91,16 +100,16 @@ public class AVLTree<K> {
         if (key instanceof Comparable && node.getKey() instanceof Comparable) {
             Comparable<K> k = (Comparable<K>) key;
             int comp = k.compareTo(node.getKey());
-    
-            if (comp > 0) { 
+
+            if (comp > 0) {
                 result.addAll(node.getValues());
                 findLessRecursive(node.getRight(), key, result);
             }
-    
+
             // Always check the left subtree
             findLessRecursive(node.getLeft(), key, result);
         }
-    }    
+    }
 
     private AVLNode<K> largestOnLeft(AVLNode<K> node) {
         AVLNode<K> current = node;
@@ -180,7 +189,8 @@ public class AVLTree<K> {
         z.setParent(y);
         y.setRight(z);
         z.setLeft(reattach);
-        if (reattach != null) reattach.setParent(z);
+        if (reattach != null)
+            reattach.setParent(z);
 
         // Update height
         z.updateHeight();
@@ -198,7 +208,8 @@ public class AVLTree<K> {
         z.setParent(y);
         y.setLeft(z);
         z.setRight(reattach);
-        if (reattach != null) reattach.setParent(z);
+        if (reattach != null)
+            reattach.setParent(z);
 
         // Update Height
         z.updateHeight();
@@ -267,12 +278,19 @@ public class AVLTree<K> {
             if (key instanceof Comparable && walk.getKey() instanceof Comparable) {
                 Comparable<K> k = (Comparable<K>) key;
                 int comp = k.compareTo(walk.getKey());
-                if (comp == 0) {
+                if (comp < 0) {
+                    walk = walk.getLeft();
                     return walk;
                 } else if (comp > 0) {
                     walk = walk.getRight();
+                } else if (key instanceof Double && walk.getKey() instanceof Double) { // Handle possible precision
+                                                                                       // issues with doubles
+                    double epsilon = 0.00001; // Define a tolerance
+                    if (Math.abs((Double) key - (Double) walk.getKey()) < epsilon) {
+                        return walk; // Found
+                    }
                 } else {
-                    walk = walk.getLeft();
+                    return walk; // Found
                 }
             }
         }
@@ -351,51 +369,54 @@ public class AVLTree<K> {
         System.out.println();
     }
 
-    //Testing specfically for find more find less
+    // Testing specfically for find more find less
     // public static void main(String[] args) {
-    //     AVLTree<Integer> ageTree = new AVLTree<>();
-    //     Integer[] arr = { 41, 99, 67, 90, 81, 23, 80, 84, 9, 60, 94, 78 };
-    //     // Integer[] arr = {3, 1, 2};
-    
-    //     // Insert nodes into the AVL tree using the 'insert' method
-    //     for (int i = 0; i < arr.length; i++) {
-    //         ageTree.insert(arr[i], i);
-    //     }
-    //     ageTree.insert(99, 12);
+    // AVLTree<Integer> ageTree = new AVLTree<>();
+    // Integer[] arr = { 41, 99, 67, 90, 81, 23, 80, 84, 9, 60, 94, 78 };
+    // // Integer[] arr = {3, 1, 2};
 
-    //     System.out.println("Before: ");
-    //     ageTree.print();
-    //     System.out.println();
+    // // Insert nodes into the AVL tree using the 'insert' method
+    // for (int i = 0; i < arr.length; i++) {
+    // ageTree.insert(arr[i], i);
+    // }
+    // ageTree.insert(99, 12);
 
-    //     System.out.println("Delete: 67 2"); // root is 81, left 60, right 90
-    //     ageTree.remove(67, 2, false);
-    //     ageTree.print();
-    //     System.out.println();
-    
-    //     // Test findMore() method
-    //     System.out.println("Testing findMore(67):");
-    //     List<Integer> moreResults = ageTree.findMore(67);  // Keys greater than 67
-    //     System.out.println("Expected Record IDs for keys > 67: [3, 7, 4, 10, 1, 12]");  // Based on the keys greater than 67
-    //     System.out.println("Actual Record IDs: " + moreResults);
-    //     System.out.println();
-    
-    //     // Test findLess() method
-    //     System.out.println("Testing findLess(67):");
-    //     List<Integer> lessResults = ageTree.findLess(67);  // Keys less than 67
-    //     System.out.println("Expected Record IDs for keys < 67: [5, 8, 0, 9]");  // Based on the keys less than 67
-    //     System.out.println("Actual Record IDs: " + lessResults);
-    //     System.out.println();
-    
-    //     System.out.println("Testing findMore(60):");
-    //     moreResults = ageTree.findMore(60);
-    //     System.out.println("Expected Record IDs for keys > 60: [2, 3, 7, 4, 10, 1, 12]");
-    //     System.out.println("Actual Record IDs: " + moreResults);
-    //     System.out.println();
-    
-    //     System.out.println("Testing findLess(60):");
-    //     lessResults = ageTree.findLess(60);
-    //     System.out.println("Expected Record IDs for keys < 60: [5, 8, 0, 9]");
-    //     System.out.println("Actual Record IDs: " + lessResults);
-    //     System.out.println();
+    // System.out.println("Before: ");
+    // ageTree.print();
+    // System.out.println();
+
+    // System.out.println("Delete: 67 2"); // root is 81, left 60, right 90
+    // ageTree.remove(67, 2, false);
+    // ageTree.print();
+    // System.out.println();
+
+    // // Test findMore() method
+    // System.out.println("Testing findMore(67):");
+    // List<Integer> moreResults = ageTree.findMore(67); // Keys greater than 67
+    // System.out.println("Expected Record IDs for keys > 67: [3, 7, 4, 10, 1,
+    // 12]"); // Based on the keys greater than 67
+    // System.out.println("Actual Record IDs: " + moreResults);
+    // System.out.println();
+
+    // // Test findLess() method
+    // System.out.println("Testing findLess(67):");
+    // List<Integer> lessResults = ageTree.findLess(67); // Keys less than 67
+    // System.out.println("Expected Record IDs for keys < 67: [5, 8, 0, 9]"); //
+    // Based on the keys less than 67
+    // System.out.println("Actual Record IDs: " + lessResults);
+    // System.out.println();
+
+    // System.out.println("Testing findMore(60):");
+    // moreResults = ageTree.findMore(60);
+    // System.out.println("Expected Record IDs for keys > 60: [2, 3, 7, 4, 10, 1,
+    // 12]");
+    // System.out.println("Actual Record IDs: " + moreResults);
+    // System.out.println();
+
+    // System.out.println("Testing findLess(60):");
+    // lessResults = ageTree.findLess(60);
+    // System.out.println("Expected Record IDs for keys < 60: [5, 8, 0, 9]");
+    // System.out.println("Actual Record IDs: " + lessResults);
+    // System.out.println();
     // }
 }
