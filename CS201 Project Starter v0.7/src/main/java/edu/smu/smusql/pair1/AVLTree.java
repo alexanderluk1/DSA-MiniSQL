@@ -42,10 +42,8 @@ public class AVLTree<K> {
                 node.getRight().setParent(node);
             } else if (key instanceof Double && node.getKey() instanceof Double) { // Handle possible precision issues
                                                                                    // with doubles
-                System.out.println("Double detected");
                                                                                    double epsilon = 0.00001; // Define a tolerance
                 if (Math.abs((Double) key - (Double) node.getKey()) < epsilon) {
-                    System.out.println("Double is equal?");
                     node.getValues().add(id);
                     return node; // Found
                 }
