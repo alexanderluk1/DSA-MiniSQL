@@ -27,11 +27,6 @@ public class Parser {
         return parsedCreateCommand;
     }
 
-    /**
-     * SELECT * FROM student
-     * SELECT * FROM student WHERE gpa > 3.8 AND age < 20
-     * SELECT * FROM student WHERE gpa > 3.8 OR age < 20
-     */
     public static List<String> parseSelect(String query) {
         String lowerCaseQuery = query.toLowerCase(); // Convert the query to lowercase for case-insensitive comparison
         if (lowerCaseQuery.contains("where")) {
@@ -58,14 +53,6 @@ public class Parser {
         return parsedSelectCommand;
     }
 
-    // helper method for parseSelect
-    /*
-     * This method helps to break down the query into 2 main parts
-     * (1) before the WHERE clause , and
-     * (2) after the WHERE clause
-     *
-     * eg. ["SELECT * FROM student", "gpa > 3.8"]
-     */
     private static List<String> parseSelectWhere(String query) {
         List<String> parsedSelectCommand = new ArrayList<>();
         String[] queryParts = query.split("(?i)where");
@@ -98,7 +85,7 @@ public class Parser {
 
         // Extract SET clause (column name and new value)
         String setColumn = tokens[3];
-        String setNewValue = convertToDoubleIfNeeded(tokens[5]);
+        String setNewValue = convertToDoubleIfNeeded(tokens[5], "=");
         parsedUpdate.add(setColumn);
         parsedUpdate.add(setNewValue);
 
@@ -135,13 +122,6 @@ public class Parser {
         return parsedDelete;
     }
 
-    /**
-     * This method splits up all the condition by "AND" / "OR"
-     * @param query - String of command -> "gpa > 3.8 AND age < 20"
-     * @return - A List -> [gpa > 3.8, age < 20]
-     */
-
-    /* This method returns the individual conditions (eg. "gpa > 3.8") as long as there is a WHERE clause */
     public static List<String> parseConditions(String query) {
         List<String> conditions = new ArrayList<>();
         String logicalOperator = null;
@@ -168,7 +148,7 @@ public class Parser {
         return conditions;
     }
 
-    // Converts any integer values in a condition to double
+    // Converts integer values in conditions with < or > operators to double
     private static String convertConditionsToDouble(String conditions) {
         StringBuilder converted = new StringBuilder();
         String[] parts = conditions.split("\\s+(AND|OR)\\s+", -1);
@@ -177,7 +157,7 @@ public class Parser {
             String part = parts[i].trim();
             String[] tokens = part.split("\\s+");
             if (tokens.length == 3) {
-                tokens[2] = convertToDoubleIfNeeded(tokens[2]);
+                tokens[2] = convertToDoubleIfNeeded(tokens[2], tokens[1]);
                 converted.append(String.join(" ", tokens));
             } else {
                 converted.append(part);
@@ -191,13 +171,16 @@ public class Parser {
         return converted.toString();
     }
 
-
-    private static String convertToDoubleIfNeeded(String value) {
-        try {
-            int intValue = Integer.parseInt(value);
-            return String.valueOf((double) intValue);
-        } catch (NumberFormatException e) {
-            return value; // Return as-is if not an integer
+    private static String convertToDoubleIfNeeded(String value, String operator) {
+        // Convert only if the operator is not "="
+        if (!operator.equals("=")) {
+            try {
+                int intValue = Integer.parseInt(value);
+                return String.valueOf((double) intValue);
+            } catch (NumberFormatException e) {
+                // Return as-is if not an integer
+            }
         }
+        return value;
     }
 }
