@@ -66,19 +66,15 @@ public class AVLTree<K> {
     }
 
     private void findMoreRecursive(AVLNode<K> node, K key, List<Integer> result) {
-        if (node == null) {
-            return;
-        }
+        if (node == null) return;
 
         if (key instanceof Comparable && node.getKey() instanceof Comparable) {
             Comparable<K> k = (Comparable<K>) key;
             int comp = k.compareTo(node.getKey());
-
             if (comp < 0) {
                 result.addAll(node.getValues());
                 findMoreRecursive(node.getLeft(), key, result);
             }
-
             findMoreRecursive(node.getRight(), key, result);
         }
     }

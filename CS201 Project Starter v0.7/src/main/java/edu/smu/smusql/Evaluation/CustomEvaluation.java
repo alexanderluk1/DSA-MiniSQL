@@ -16,6 +16,7 @@ public class CustomEvaluation {
     private static int insertCount = 0, selectCount = 0, updateCount = 0, deleteCount = 0;
     private static int complexSelectCount = 0, complexUpdateCount = 0, complexDeleteCount = 0;
     private static Map<QueryToExecute, Double> queryTimeMap = new HashMap<>();
+    private static int idCounter = 1;
 
     public static void runEvaluation(int numberOfQueries) {
         System.out.println("=====================================");
@@ -29,23 +30,23 @@ public class CustomEvaluation {
         prepopulateTables();
 
         // Execute n queries equally for each type of query
-        int baseExecutionPerQuery = numberOfQueries / QueryToExecute.values().length;
-        int remainingQueries = numberOfQueries % QueryToExecute.values().length;
-
-        executeEqually(baseExecutionPerQuery, random);
-
-        // Distribute the remaining queries randomly
-        List<QueryToExecute> queryTypes = new ArrayList<>(List.of(QueryToExecute.values()));
-        for (int i = 0; i < remainingQueries; i++) {
-            QueryToExecute randomQuery = queryTypes.get(random.nextInt(queryTypes.size()));
-            executeSpecificQuery(randomQuery, random);
-        }
-
-        long endTime = System.nanoTime();
-        double totalElapsedTime = (endTime - startTime) / 1_000_000_000.0;
-
-        // Print the summary of actions taken
-        printSummary(numberOfQueries, totalElapsedTime);
+//        int baseExecutionPerQuery = numberOfQueries / QueryToExecute.values().length;
+//        int remainingQueries = numberOfQueries % QueryToExecute.values().length;
+//
+//        executeEqually(baseExecutionPerQuery, random);
+//
+//        // Distribute the remaining queries randomly
+//        List<QueryToExecute> queryTypes = new ArrayList<>(List.of(QueryToExecute.values()));
+//        for (int i = 0; i < remainingQueries; i++) {
+//            QueryToExecute randomQuery = queryTypes.get(random.nextInt(queryTypes.size()));
+//            executeSpecificQuery(randomQuery, random);
+//        }
+//
+//        long endTime = System.nanoTime();
+//        double totalElapsedTime = (endTime - startTime) / 1_000_000_000.0;
+//
+//        // Print the summary of actions taken
+//        printSummary(numberOfQueries, totalElapsedTime);
     }
 
     // Method to create initial tables
@@ -167,22 +168,30 @@ public class CustomEvaluation {
     // Generate an INSERT query
     private static String generateInsertQuery(Random random) {
         int tableChoice = random.nextInt(4);
-        switch (tableChoice) {
-            case 0:
-                return String.format("INSERT INTO users VALUES (%d, 'User%d', %d, 'City%d')", random.nextInt(10000), random.nextInt(10000), random.nextInt(60) + 20, random.nextInt(10));
-            case 1:
-                return String.format("INSERT INTO products VALUES (%d, 'Product%d', %.2f, 'Category%d')", random.nextInt(1000), random.nextInt(1000), random.nextDouble() * 1000, random.nextInt(5));
-            case 2:
-                return String.format("INSERT INTO orders VALUES (%d, %d, %d, %d)", random.nextInt(10000), random.nextInt(10000), random.nextInt(1000), random.nextInt(50));
-            case 3:
-                return String.format("INSERT INTO student VALUES (%d, 'Student%d', %d, %.2f, %b)",
-                        random.nextInt(10000),                // id
-                        random.nextInt(10000),                // name with Student prefix
-                        random.nextInt(60) + 16,              // age between 16 and 75
-                        random.nextDouble() * 4.0,            // gpa between 0.0 and 4.0
-                        random.nextBoolean());
-        }
-        return "";
+        return switch (tableChoice) {
+            case 0 -> String.format("INSERT INTO users VALUES (%d, 'User%d', %d, 'City%d')",
+                    idCounter++,
+                    random.nextInt(10000),
+                    random.nextInt(60) + 20,
+                    random.nextInt(10));
+            case 1 -> String.format("INSERT INTO products VALUES (%d, 'Product%d', %.2f, 'Category%d')",
+                    idCounter++,
+                    random.nextInt(1000),
+                    random.nextDouble() * 1000,
+                    random.nextInt(5));
+            case 2 -> String.format("INSERT INTO orders VALUES (%d, %d, %d, %d)",
+                    idCounter++,
+                    random.nextInt(10000),
+                    random.nextInt(1000),
+                    random.nextInt(50));
+            case 3 -> String.format("INSERT INTO student VALUES (%d, 'Student%d', %d, %.2f, %b)",
+                    idCounter++,                // id
+                    random.nextInt(10000),                // name with Student prefix
+                    random.nextInt(60) + 16,              // age between 16 and 75
+                    random.nextDouble() * 4.0,            // gpa between 0.0 and 4.0
+                    random.nextBoolean());
+            default -> "";
+        };
     }
 
     // Prepopulate tables with sample data
