@@ -177,14 +177,12 @@ public class Parser {
             String part = parts[i].trim();
             String[] tokens = part.split("\\s+");
             if (tokens.length == 3) {
-                // Convert the value part if it's an integer
                 tokens[2] = convertToDoubleIfNeeded(tokens[2]);
                 converted.append(String.join(" ", tokens));
             } else {
                 converted.append(part);
             }
 
-            // Add " AND " or " OR " between conditions, except for the last one
             if (i < parts.length - 1) {
                 converted.append(" ").append(conditions.contains("AND") ? "AND" : "OR").append(" ");
             }
@@ -193,12 +191,13 @@ public class Parser {
         return converted.toString();
     }
 
+
     private static String convertToDoubleIfNeeded(String value) {
         try {
             int intValue = Integer.parseInt(value);
             return String.valueOf((double) intValue);
         } catch (NumberFormatException e) {
-            return value; // Return as is if not an integer
+            return value; // Return as-is if not an integer
         }
     }
 }
