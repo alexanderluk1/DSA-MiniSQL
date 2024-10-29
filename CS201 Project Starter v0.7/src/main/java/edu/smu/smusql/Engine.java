@@ -14,7 +14,6 @@ public class Engine {
     Database db = new Database();
 
     public String executeSQL(String query) {
-        System.out.println("Executing " + query);
         String[] tokens = query.trim().split("\\s+");
         String command = tokens[0].toUpperCase();
 

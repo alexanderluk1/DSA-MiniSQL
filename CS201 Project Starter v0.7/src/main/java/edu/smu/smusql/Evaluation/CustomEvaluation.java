@@ -30,23 +30,23 @@ public class CustomEvaluation {
         prepopulateTables();
 
         // Execute n queries equally for each type of query
-//        int baseExecutionPerQuery = numberOfQueries / QueryToExecute.values().length;
-//        int remainingQueries = numberOfQueries % QueryToExecute.values().length;
-//
-//        executeEqually(baseExecutionPerQuery, random);
-//
-//        // Distribute the remaining queries randomly
-//        List<QueryToExecute> queryTypes = new ArrayList<>(List.of(QueryToExecute.values()));
-//        for (int i = 0; i < remainingQueries; i++) {
-//            QueryToExecute randomQuery = queryTypes.get(random.nextInt(queryTypes.size()));
-//            executeSpecificQuery(randomQuery, random);
-//        }
-//
-//        long endTime = System.nanoTime();
-//        double totalElapsedTime = (endTime - startTime) / 1_000_000_000.0;
-//
-//        // Print the summary of actions taken
-//        printSummary(numberOfQueries, totalElapsedTime);
+        int baseExecutionPerQuery = numberOfQueries / QueryToExecute.values().length;
+        int remainingQueries = numberOfQueries % QueryToExecute.values().length;
+
+        executeEqually(baseExecutionPerQuery, random);
+
+        // Distribute the remaining queries randomly
+        List<QueryToExecute> queryTypes = new ArrayList<>(List.of(QueryToExecute.values()));
+        for (int i = 0; i < remainingQueries; i++) {
+            QueryToExecute randomQuery = queryTypes.get(random.nextInt(queryTypes.size()));
+            executeSpecificQuery(randomQuery, random);
+        }
+
+        long endTime = System.nanoTime();
+        double totalElapsedTime = (endTime - startTime) / 1_000_000_000.0;
+
+        // Print the summary of actions taken
+        printSummary(numberOfQueries, totalElapsedTime);
     }
 
     // Method to create initial tables
@@ -69,9 +69,17 @@ public class CustomEvaluation {
     }
 
     private static void executeEqually(int numberOfExecutionPerQuery, Random random) {
+        int executedQueries = 0; // Track the number of queries executed
+
         for (QueryToExecute query : QueryToExecute.values()) {
             for (int i = 0; i < numberOfExecutionPerQuery; i++) {
                 executeSpecificQuery(query, random);
+                executedQueries++;
+
+                // Print every 1,000 queries executed
+                if (executedQueries % 1000 == 0) {
+                    System.out.println("Executed " + executedQueries + " queries so far...");
+                }
             }
         }
     }
@@ -122,9 +130,9 @@ public class CustomEvaluation {
         for (int i = 0; i < numberOfQueries; i++) {
             executeRandomQuery(random);
 
-            // Print progress every 10,000 queries
-            if (i % 10_000 == 0 && i > 0) {
-                System.out.println("Processed " + i + " queries...");
+            // Print every 1,000 queries executed
+            if ((i + 1) % 1000 == 0) {
+                System.out.println("Executed " + (i + 1) + " queries so far...");
             }
         }
     }
@@ -307,8 +315,8 @@ public class CustomEvaluation {
         // Conditions specific to each table's schema
         String[] studentConditions = {"age > 20", "gpa > 3.0", "deans_list = true"};
         String[] userConditions = {"age > 30", "city = 'New York'", "age < 25"};
-        String[] productConditions = {"price < 500", "category = 'Electronics'", "price > 100"};
-        String[] orderConditions = {"quantity > 5", "user_id = 1", "product_id = 100", "quantity < 50"};
+        String[] productConditions = {"price < 500.0", "category = 'Electronics'", "price > 100.0"};
+        String[] orderConditions = {"quantity > 5", "quantity < 25", "quantity > 50", "quantity < 50"};
 
         // Logical operators
         String[] logicalOperators = {"AND", "OR"};
@@ -420,12 +428,12 @@ public class CustomEvaluation {
                 conditions.add(generateCondition("city", "'" + "'City" + random.nextInt(10) + "'", "="));
                 break;
             case "products":
-                conditions.add(generateCondition("price", random.nextInt(500) + 100, random.nextBoolean() ? ">" : "<"));
+                conditions.add(generateCondition("price", random.nextDouble() * 500 + 100, random.nextBoolean() ? ">" : "<"));
                 conditions.add(generateCondition("category", "'" + "'Category" + random.nextInt(5) + "'", "="));
                 break;
             case "orders":
                 conditions.add(generateCondition("quantity", random.nextInt(50) + 1, random.nextBoolean() ? ">" : "<"));
-                conditions.add(generateCondition("user_id", String.valueOf(random.nextInt(10000) + 1), "="));
+                conditions.add(generateCondition("user_id", random.nextInt(10000) + 1, "=")); // Generates user_id as an integer
                 break;
         }
 
@@ -436,6 +444,10 @@ public class CustomEvaluation {
     }
 
     private static String generateCondition(String field, Object value, String operator) {
+        // Only wrap in single quotes if value is a String and is not already quoted
+        if (value instanceof String && !((String) value).startsWith("'") && field.equals("category")) {
+            value = "'" + value + "'";
+        }
         return String.format("%s %s %s", field, operator, value);
     }
 
@@ -449,8 +461,8 @@ public class CustomEvaluation {
         String updateField;
         String conditionField;
         String conditionOperator;
-        String idField = "id";  // Assuming all tables have an "id" field
         String conditionValue;
+        Object newValue;  // Use Object to handle both Integer and Double values
 
         switch (tableName) {
             case "users":
@@ -458,22 +470,31 @@ public class CustomEvaluation {
                 conditionField = "city";
                 conditionOperator = "=";
                 conditionValue = "'City" + random.nextInt(10) + "'"; // Generate a random city
+                newValue = random.nextInt(60) + 20;  // Age as an integer between 20 and 80
                 break;
             case "products":
                 updateField = "price";
                 conditionField = "category";
                 conditionOperator = "=";
                 conditionValue = "'Category" + random.nextInt(5) + "'"; // Generate a random category
+                newValue = (random.nextDouble() * 999.0) + 1.0;  // Price as a double between 1.0 and 1000.0
                 break;
             default:
                 updateField = "age";
                 conditionField = "city";
                 conditionOperator = "=";
                 conditionValue = "'City1'";
+                newValue = random.nextInt(60) + 20;  // Default to age as an integer
         }
 
-        int newValue = random.nextInt(100) + 1;  // Random value for the update field
-        return String.format("UPDATE %s SET %s = %d WHERE %s %s %s", tableName, updateField, newValue, conditionField, conditionOperator, conditionValue);
+        // Format the update SQL query, ensuring price uses %.2f for double values
+        return String.format("UPDATE %s SET %s = %s WHERE %s %s %s",
+                tableName,
+                updateField,
+                newValue instanceof Double ? String.format("%.2f", newValue) : newValue,
+                conditionField,
+                conditionOperator,
+                conditionValue);
     }
 
     private static void printSummary(int numberOfQueries, double totalElapsedTime) {
