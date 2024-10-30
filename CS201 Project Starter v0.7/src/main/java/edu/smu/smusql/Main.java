@@ -25,22 +25,22 @@ public class Main {
             if (query.equalsIgnoreCase("exit")) {
                 break;
             }
-            else if (query.equalsIgnoreCase("eval")) {
+            else if (query.equalsIgnoreCase("evaluate")) {
                 for (int i = 1000; i <= 100000; i*=10) { // i <= 1000000; i *= 10
                     CustomEvaluation.runEvaluation(i);
                 }
                 Summary.writeAllTimingsToCSV();
                 continue;
             }
-            else if (query.equalsIgnoreCase("evaluate")) {
-                long startTime = System.nanoTime();
-                autoEvaluate();
-                long stopTime = System.nanoTime();
-                long elapsedTime = stopTime - startTime;
-                double elapsedTimeInSecond = (double) elapsedTime / 1_000_000_000;
-                System.out.println("Time elapsed: " + elapsedTimeInSecond + " seconds");
-                break;
-            }
+//            else if (query.equalsIgnoreCase("evaluate")) {
+//                long startTime = System.nanoTime();
+//                autoEvaluate();
+//                long stopTime = System.nanoTime();
+//                long elapsedTime = stopTime - startTime;
+//                double elapsedTimeInSecond = (double) elapsedTime / 1_000_000_000;
+//                System.out.println("Time elapsed: " + elapsedTimeInSecond + " seconds");
+//                break;
+//            }
 
             System.out.println(dbEngine.executeSQL(query));
         }
