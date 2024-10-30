@@ -49,11 +49,18 @@ public class Table {
     public void deleteRecords(List<Integer> list) {
         for (Integer id : list) {
             Record record = records.get(id);
-            for (int i = 1; i < columnOrder.size(); i++) { // Remove from AVL Tree
+
+            if (record == null) {
+//                System.out.println("[WARNING] Record with ID " + id + " not found. Skipping deletion.");
+                continue; // Skip this iteration if the record does not exist
+            }
+
+            // If record exists, proceed with deletion from AVL Trees and HashMap
+            for (int i = 1; i < columnOrder.size(); i++) { // Start from 1 to skip "id"
                 String columnName = columnOrder.get(i);
                 columns.get(columnName).remove(record.getColumnValue(columnName), id); // Remove from all Trees
             }
-            records.remove(id); // Remove from hashTable
+            records.remove(id); // Remove from HashMap
         }
     }
 
@@ -115,17 +122,35 @@ public class Table {
 
     public List<Integer> getWithCondition(String colName, String operator, Object value) {
         List<Integer> result = new ArrayList<>();
+
+        // Check if the column being searched is the "id" column
         if (colName.equals("id")) {
-            return getForId(operator, value); // id is unique, no need for AVL tree lookup
+            Integer id = (Integer) value;
+            Record record = records.get(id);
+
+            if (record != null) {
+                result.add(id); // Only add if the record exists
+            }
+            return result;
         }
 
+        // For other columns, search AVL Tree
         AVLTree<Object> tree = columns.get(colName);
-        if (operator.contains("=")) {
-            AVLNode<Object> found = tree.get(value);
-            if (found != null) result.addAll(found.getValues());
+        if (tree == null) {
+//            System.out.println("[WARNING] Column " + colName + " not found in table.");
+            return result; // Early exit if the column does not exist
         }
-        if (operator.contains(">")) result.addAll(tree.findMore(value)); // greater than
-        if (operator.contains("<")) result.addAll(tree.findLess(value)); // less than
+
+        if (operator.equals(">")) {
+            result.addAll(tree.findMore(value));
+        } else if (operator.equals("<")) {
+            result.addAll(tree.findLess(value));
+        } else if (operator.equals("=")) {
+            AVLNode<Object> node = tree.get(value);
+            if (node != null) {
+                result.addAll(node.getValues()); // Add values only if node is found
+            }
+        }
         return result;
     }
 
@@ -149,8 +174,14 @@ public class Table {
     public String formatRecords(List<Integer> subset) {
         StringBuilder sb = new StringBuilder();
         sb.append(printHeader()); // Get headers
-        for (Integer id : subset) { // Iterate through the subset
-            sb.append(records.get(id).toString(columnOrder));
+
+        for (Integer id : subset) {
+            Record record = records.get(id);
+            if (record == null) {
+//                System.out.println("Warning: Record with ID " + id + " not found.");
+                continue; // Skip missing records
+            }
+            sb.append(record.toString(columnOrder));
         }
         return sb.toString();
     }

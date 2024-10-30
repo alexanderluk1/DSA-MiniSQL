@@ -114,11 +114,13 @@ public class AVLTree<K> {
     }
 
     // child replaces parent
+    // Replace a parent node with its child node, if child is not null
     private void replaceParentWithChild(AVLNode<K> parent, AVLNode<K> child) {
         AVLNode<K> grandparent = parent.getParent();
-        if (grandparent != null) { // parent is not root
+
+        if (grandparent != null) { // parent is not the root
             grandparent.updateChild(child, parent);
-        } else { // parent is root
+        } else { // parent is the root
             root = child;
             if (child != null) child.setParent(null);
         }
