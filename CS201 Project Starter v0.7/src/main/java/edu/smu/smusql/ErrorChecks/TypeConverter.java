@@ -23,18 +23,15 @@ public class TypeConverter {
             return Boolean.parseBoolean(value);
         }
 
-        // Step 2: Check if it's an integer
+        // Step 2: Try to parse as a number
         try {
-            return Integer.parseInt(value);
+            if (value.contains(".")) {
+                return Double.parseDouble(value);
+            } else {
+                return Integer.parseInt(value);
+            }
         } catch (NumberFormatException e) {
             // Not an integer, move on to the next check
-        }
-
-        // Step 3: Check if it's a double
-        try {
-            return Double.parseDouble(value);
-        } catch (NumberFormatException e) {
-            // Not a double, move on to treat as string
         }
 
         // Step 4: Treat as a string (remove any extra quotes around strings)

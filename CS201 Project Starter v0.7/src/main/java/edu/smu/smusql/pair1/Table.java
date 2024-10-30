@@ -109,7 +109,7 @@ public class Table {
 
     private List<Integer> getForId(String operator, Object value) {
         List<Integer> result = new ArrayList<>();
-        if (records.get(value) != null) result.add((Integer) value); // id is unique, no need for AVL tree lookup
+        if (records.get((Integer) value) != null) result.add((Integer) value); // id is unique, no need for AVL tree lookup
         return result;
     }
 

@@ -97,6 +97,9 @@ public class Engine {
 
         List<Integer> listOfIds = getRecordIds(tableToSelectFrom, 
                                   Parser.parseConditions(parsedCommand.get(1)));
+        if (listOfIds.isEmpty()) {
+            return "No rows found";
+        }
         return tableToSelectFrom.formatRecords(listOfIds);
     }
 

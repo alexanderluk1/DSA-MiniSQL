@@ -49,7 +49,7 @@ public class Parser {
         if (query.toLowerCase().contains("where")) {
             String[] queryParts = query.split("(?i)where");
             parsedSelectCommand.add(queryParts[0].trim());
-            parsedSelectCommand.add(convertConditionsToDouble(queryParts[1].trim()));
+            parsedSelectCommand.add(queryParts[1].trim());
         } else {
             // No WHERE clause, add the entire query as-is
             parsedSelectCommand.add(query.trim());
@@ -74,7 +74,7 @@ public class Parser {
 
         // Check if the condition exists after the WHERE clause
         if (queryParts.length > 1 && !queryParts[1].trim().isEmpty()) {
-            parsedSelectCommand.add(convertConditionsToDouble(queryParts[1].trim()));
+            parsedSelectCommand.add(queryParts[1].trim());
         } else {
             parsedSelectCommand.add(null); // Add null if no condition found
         }
@@ -98,13 +98,13 @@ public class Parser {
 
         // Extract SET clause (column name and new value)
         String setColumn = tokens[3];
-        String setNewValue = convertToDoubleIfNeeded(tokens[5]);
+        String setNewValue = tokens[5];
         parsedUpdate.add(setColumn);
         parsedUpdate.add(setNewValue);
 
         // Check if the query contains a WHERE clause
         if (lowerCaseQuery.contains("where")) {
-            String whereClauseConditions = convertConditionsToDouble(lowerCaseQuery.split("where")[1].trim());
+            String whereClauseConditions = lowerCaseQuery.split("where")[1].trim();
             parsedUpdate.add(whereClauseConditions);  // Add WHERE conditions
         } else {
             parsedUpdate.add(null);  // Indicate no WHERE clause
@@ -124,7 +124,7 @@ public class Parser {
         if (lowerQuery.contains("where")) {
             String[] whereClause = query.split("(?i)WHERE");
             if (whereClause.length > 1 && !whereClause[1].trim().isEmpty()) {
-                parsedDelete.add(convertConditionsToDouble(whereClause[1].trim()));
+                parsedDelete.add(whereClause[1].trim());
             } else {
                 parsedDelete.add(null); // Add null if no valid condition found
             }
@@ -157,11 +157,11 @@ public class Parser {
         // Loop over matches to capture conditions properly
         while (matcher.find()) {
             String condition = matcher.group().trim();
-            conditions.add(convertConditionsToDouble(condition));
+            conditions.add(condition);
         }
 
-        // Add logical operator if present and conditions are valid
-        if (logicalOperator != null && !conditions.isEmpty()) {
+        // Add logical operator if present and there are multiple conditions
+        if (logicalOperator != null && conditions.size() > 1) {
             conditions.add(logicalOperator);
         }
 

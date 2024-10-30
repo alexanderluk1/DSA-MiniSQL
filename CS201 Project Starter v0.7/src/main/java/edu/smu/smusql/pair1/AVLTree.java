@@ -42,7 +42,7 @@ public class AVLTree<K> {
                 node.getRight().setParent(node);
             } else if (key instanceof Double && node.getKey() instanceof Double) { // Handle possible precision issues
                                                                                    // with doubles
-                                                                                   double epsilon = 0.00001; // Define a tolerance
+                double epsilon = 0.00001; // Define a tolerance
                 if (Math.abs((Double) key - (Double) node.getKey()) < epsilon) {
                     node.getValues().add(id);
                     return node; // Found
@@ -120,7 +120,7 @@ public class AVLTree<K> {
             grandparent.updateChild(child, parent);
         } else { // parent is root
             root = child;
-            child.setParent(null);
+            if (child != null) child.setParent(null);
         }
     }
 
@@ -274,7 +274,6 @@ public class AVLTree<K> {
                 int comp = k.compareTo(walk.getKey());
                 if (comp < 0) {
                     walk = walk.getLeft();
-                    return walk;
                 } else if (comp > 0) {
                     walk = walk.getRight();
                 } else if (key instanceof Double && walk.getKey() instanceof Double) { // Handle possible precision

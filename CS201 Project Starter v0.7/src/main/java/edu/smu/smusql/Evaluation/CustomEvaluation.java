@@ -16,7 +16,7 @@ public class CustomEvaluation {
     private static int insertCount = 0, selectCount = 0, updateCount = 0, deleteCount = 0;
     private static int complexSelectCount = 0, complexUpdateCount = 0, complexDeleteCount = 0;
     private static Map<QueryToExecute, Double> queryTimeMap = new HashMap<>();
-    private static int idCounter = 1;
+    private static int idCounter = 10;
 
     public static void runEvaluation(int numberOfQueries) {
         System.out.println("=====================================");
@@ -30,23 +30,23 @@ public class CustomEvaluation {
         prepopulateTables();
 
         // Execute n queries equally for each type of query
-//        int baseExecutionPerQuery = numberOfQueries / QueryToExecute.values().length;
-//        int remainingQueries = numberOfQueries % QueryToExecute.values().length;
-//
-//        executeEqually(baseExecutionPerQuery, random);
-//
-//        // Distribute the remaining queries randomly
-//        List<QueryToExecute> queryTypes = new ArrayList<>(List.of(QueryToExecute.values()));
-//        for (int i = 0; i < remainingQueries; i++) {
-//            QueryToExecute randomQuery = queryTypes.get(random.nextInt(queryTypes.size()));
-//            executeSpecificQuery(randomQuery, random);
-//        }
-//
-//        long endTime = System.nanoTime();
-//        double totalElapsedTime = (endTime - startTime) / 1_000_000_000.0;
-//
-//        // Print the summary of actions taken
-//        printSummary(numberOfQueries, totalElapsedTime);
+       int baseExecutionPerQuery = numberOfQueries / QueryToExecute.values().length;
+       int remainingQueries = numberOfQueries % QueryToExecute.values().length;
+
+       executeEqually(baseExecutionPerQuery, random);
+
+       // Distribute the remaining queries randomly
+       List<QueryToExecute> queryTypes = new ArrayList<>(List.of(QueryToExecute.values()));
+       for (int i = 0; i < remainingQueries; i++) {
+           QueryToExecute randomQuery = queryTypes.get(random.nextInt(queryTypes.size()));
+           executeSpecificQuery(randomQuery, random);
+       }
+
+       long endTime = System.nanoTime();
+       double totalElapsedTime = (endTime - startTime) / 1_000_000_000.0;
+
+       // Print the summary of actions taken
+       printSummary(numberOfQueries, totalElapsedTime);
     }
 
     // Method to create initial tables
@@ -215,13 +215,13 @@ public class CustomEvaluation {
         System.out.println("  -> Prepopulating STUDENT table...");
 
         String[] insertCommands = {
-                "INSERT INTO student VALUES (1, 'John', 30, 2.4, False)",
-                "INSERT INTO student VALUES (2, 'Alice', 18, 3.6, True)",
-                "INSERT INTO student VALUES (3, 'Bob', 19, 3.2, False)",
-                "INSERT INTO student VALUES (4, 'Charlie', 21, 2.9, False)",
-                "INSERT INTO student VALUES (5, 'Diana', 17, 3.9, True)",
-                "INSERT INTO student VALUES (6, 'Evan', 20, 3.1, True)",
-                "INSERT INTO student VALUES (7, 'Frank', 16, 3.4, False)"
+                "INSERT INTO student VALUES (1, 'John', 30, 2.4, false)",
+                "INSERT INTO student VALUES (2, 'Alice', 18, 3.6, true)",
+                "INSERT INTO student VALUES (3, 'Bob', 19, 3.2, false)",
+                "INSERT INTO student VALUES (4, 'Charlie', 21, 2.9, false)",
+                "INSERT INTO student VALUES (5, 'Diana', 17, 3.9, true)",
+                "INSERT INTO student VALUES (6, 'Evan', 20, 3.1, true)",
+                "INSERT INTO student VALUES (7, 'Frank', 16, 3.4, false)"
         };
 
         for (String insertCommand : insertCommands) {
@@ -307,7 +307,7 @@ public class CustomEvaluation {
         // Conditions specific to each table's schema
         String[] studentConditions = {"age > 20", "gpa > 3.0", "deans_list = true"};
         String[] userConditions = {"age > 30", "city = 'New York'", "age < 25"};
-        String[] productConditions = {"price < 500", "category = 'Electronics'", "price > 100"};
+        String[] productConditions = {"price < 500.0", "category = 'Electronics'", "price > 100.0"};
         String[] orderConditions = {"quantity > 5", "user_id = 1", "product_id = 100", "quantity < 50"};
 
         // Logical operators
@@ -417,11 +417,11 @@ public class CustomEvaluation {
                 break;
             case "users":
                 conditions.add(generateCondition("age", random.nextInt(60) + 20, random.nextBoolean() ? ">" : "<"));
-                conditions.add(generateCondition("city", "'" + "'City" + random.nextInt(10) + "'", "="));
+                conditions.add(generateCondition("city", "'" + "City" + random.nextInt(10) + "'", "="));
                 break;
             case "products":
-                conditions.add(generateCondition("price", random.nextInt(500) + 100, random.nextBoolean() ? ">" : "<"));
-                conditions.add(generateCondition("category", "'" + "'Category" + random.nextInt(5) + "'", "="));
+                conditions.add(generateCondition("price", String.format("%.2f", 50.0 + (random.nextDouble() * 500.0)), random.nextBoolean() ? ">" : "<"));
+                conditions.add(generateCondition("category", "'" + "Category" + random.nextInt(5) + "'", "="));
                 break;
             case "orders":
                 conditions.add(generateCondition("quantity", random.nextInt(50) + 1, random.nextBoolean() ? ">" : "<"));
