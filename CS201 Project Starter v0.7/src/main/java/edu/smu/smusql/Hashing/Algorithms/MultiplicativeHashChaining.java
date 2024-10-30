@@ -10,11 +10,12 @@ import edu.smu.smusql.pair1.Record;
 public class MultiplicativeHashChaining {
     private static final int MULTIPLIER = 31;
     private static final int MODULUS = 1_000_003;
+    private static final int DEFAULT_SIZE = 1024; // Default initial size
     private final LinkedList<Entry>[] table;
 
-    public MultiplicativeHashChaining(int size) {
-        table = new LinkedList[size];
-        for (int i = 0; i < size; i++) {
+    public MultiplicativeHashChaining() {
+        table = new LinkedList[DEFAULT_SIZE];
+        for (int i = 0; i < DEFAULT_SIZE; i++) {
             table[i] = new LinkedList<>();
         }
     }
@@ -40,6 +41,38 @@ public class MultiplicativeHashChaining {
             if (entry.key.equals(key)) return entry.value;
         }
         return null;
+    }
+
+    public boolean delete(Integer key) {
+        int index = hash(key) % table.length;
+        for (Entry entry : table[index]) {
+            if (entry.key.equals(key)) {
+                table[index].remove(entry);
+                return true; // Successfully removed the entry
+            }
+        }
+        return false; // Key not found
+    }
+
+    public boolean update(Integer key, Record newValue) {
+        int index = hash(key) % table.length;
+        for (Entry entry : table[index]) {
+            if (entry.key.equals(key)) {
+                entry.value = newValue; // Update the value for the existing key
+                return true; // Successfully updated the entry
+            }
+        }
+        return false; // Key not found
+    }
+
+    public LinkedList<Integer> getAllKeys() {
+        LinkedList<Integer> keys = new LinkedList<>();
+        for (LinkedList<Entry> bucket : table) {
+            for (Entry entry : bucket) {
+                keys.add(entry.key);
+            }
+        }
+        return keys;
     }
 
     private static class Entry {

@@ -79,6 +79,7 @@ public class Table {
         }
     }
 
+
     public void updateRecord(List<Integer> list, String columnName, Object value) {
         AVLTree<Object> tree = columns.get(columnName);
         for (Integer id : list) {

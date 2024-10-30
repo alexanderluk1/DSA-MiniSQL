@@ -506,9 +506,11 @@ public class CustomEvaluation {
     }
 
     private static void printSummary(int numberOfQueries, double totalElapsedTime) {
+        String hashingAlgo = "Cuckoo Hashing";
         System.out.println("\n=====================================");
         System.out.println("         Evaluation Summary          ");
         System.out.println("=====================================");
+        System.out.printf("Hashing Algorithm Used: %s%n", hashingAlgo);
         System.out.printf("Total Queries Executed: %d%n", numberOfQueries);
         System.out.printf("Total Time Taken: %.6f seconds%n", totalElapsedTime);
 
