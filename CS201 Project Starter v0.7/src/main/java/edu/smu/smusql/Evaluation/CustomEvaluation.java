@@ -45,8 +45,16 @@ public class CustomEvaluation {
        long endTime = System.nanoTime();
        double totalElapsedTime = (endTime - startTime) / 1_000_000_000.0;
 
+       if (numberOfQueries == 1000) { // first run
+        Summary.clearSummaryCSV();
+       }
+
        // Print the summary of actions taken
        printSummary(numberOfQueries, totalElapsedTime);
+       for (QueryToExecute queryType : QueryToExecute.values()) {
+        Double executionTime = queryTimeMap.getOrDefault(queryType, 0.0);
+        Summary.storeTiming(queryType, executionTime, numberOfQueries);
+    }
     }
 
     // Method to create initial tables

@@ -2,6 +2,7 @@ package edu.smu.smusql;
 
 import java.util.*;
 import edu.smu.smusql.Evaluation.CustomEvaluation;
+import edu.smu.smusql.Evaluation.Summary;
 
 // @author Alexander Luk
 
@@ -25,7 +26,10 @@ public class Main {
                 break;
             }
             else if (query.equalsIgnoreCase("eval")) {
-                CustomEvaluation.runEvaluation(100000);
+                for (int i = 1000; i <= 100000; i*=10) { // i <= 1000000; i *= 10
+                    CustomEvaluation.runEvaluation(i);
+                }
+                Summary.writeAllTimingsToCSV();
                 continue;
             }
             else if (query.equalsIgnoreCase("evaluate")) {
