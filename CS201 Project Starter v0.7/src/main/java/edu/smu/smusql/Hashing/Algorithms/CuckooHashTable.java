@@ -11,7 +11,7 @@ import java.util.Random;
     Use Case: Suitable for handling large datasets with efficient constant time complexity for lookups, inserts, and deletes.
  */
 public class CuckooHashTable {
-    private static final double LOAD_FACTOR = 0.5;
+    private static final double LOAD_FACTOR = 0.4;
     private static final int INITIAL_CAPACITY = 16;
     private static final int MAX_REHASH_ATTEMPTS = 32;
 

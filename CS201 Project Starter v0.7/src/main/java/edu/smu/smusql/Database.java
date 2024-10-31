@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.List;
 
 import edu.smu.smusql.pair1.CuckooTable;
+import edu.smu.smusql.pair1.MHCTable;
 import edu.smu.smusql.pair1.Table;
 
 /**
@@ -11,7 +12,8 @@ import edu.smu.smusql.pair1.Table;
  */
 public class Database {
 //    private final HashMap<String, Table> tables;
-    private final HashMap<String, CuckooTable> tables;
+//    private final HashMap<String, CuckooTable> tables;
+    private final HashMap<String, MHCTable> tables;
 
     public Database() {
         tables = new HashMap<>();
@@ -19,7 +21,9 @@ public class Database {
 
     public void createTable(String tableName, List<String> columns) {
 //        Table table = new Table();
-        CuckooTable table = new CuckooTable();
+//        CuckooTable table = new CuckooTable();
+        MHCTable table = new MHCTable();
+
         for (String col : columns) {
             table.addColumn(col);
         }
@@ -30,7 +34,11 @@ public class Database {
 //        return tables.get(tableName);
 //    }
 
-    public CuckooTable getTable(String tableName) {
+//    public CuckooTable getTable(String tableName) {
+//        return tables.get(tableName);
+//    }
+
+    public MHCTable getTable(String tableName) {
         return tables.get(tableName);
     }
 }

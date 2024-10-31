@@ -506,7 +506,7 @@ public class CustomEvaluation {
     }
 
     private static void printSummary(int numberOfQueries, double totalElapsedTime) {
-        String hashingAlgo = "Cuckoo Hashing";
+        String hashingAlgo = "Multiplicative Hash Chaining";
         System.out.println("\n=====================================");
         System.out.println("         Evaluation Summary          ");
         System.out.println("=====================================");
