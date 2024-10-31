@@ -308,7 +308,7 @@ public class CustomEvaluation {
 
     // Generate a simple SELECT query
     private static String generateSimpleSelectQuery(Random random) {
-        String[] tables = {"users", "products", "orders"};
+        String[] tables = {"users", "products", "orders", "student"};
         return String.format("SELECT * FROM %s", tables[random.nextInt(tables.length)]);
     }
 
@@ -506,7 +506,7 @@ public class CustomEvaluation {
     }
 
     private static void printSummary(int numberOfQueries, double totalElapsedTime) {
-        String hashingAlgo = "Multiplicative Hash Chaining";
+        String hashingAlgo = "Cuckoo Hashing w 0.4 Load Factor";
         System.out.println("\n=====================================");
         System.out.println("         Evaluation Summary          ");
         System.out.println("=====================================");
