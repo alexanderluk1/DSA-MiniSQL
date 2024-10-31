@@ -2,6 +2,8 @@ package edu.smu.smusql.Hashing.Algorithms;
 
 import edu.smu.smusql.pair1.Record;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 
 /*
@@ -125,6 +127,22 @@ public class CuckooHashTable {
         }
 
         return false;
+    }
+
+    // Retrieves all records in the hash table
+    public List<Record> getAllRecords() {
+        List<Record> allRecords = new ArrayList<>();
+        for (Record record : table1) {
+            if (record != null) {
+                allRecords.add(record);
+            }
+        }
+        for (Record record : table2) {
+            if (record != null) {
+                allRecords.add(record);
+            }
+        }
+        return allRecords;
     }
 
     // Resizes the hash table and rehashes all entries

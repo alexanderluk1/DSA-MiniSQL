@@ -8,7 +8,6 @@ import java.util.List;
 
 public class Table {
     private HashMap<Integer, Record> records; // Stores the records - Key = ID of record
-    private CuckooHashTable cuckooHashTable; // Stores records using Cuckoo Hashing
     private HashMap<String, AVLTree<Object>> columns; // Column name and Tree
     private List<String> columnOrder; // maintain order of col
 
@@ -16,7 +15,6 @@ public class Table {
         this.records = new HashMap<>();
         this.columns = new HashMap<>();
         this.columnOrder = new ArrayList<>();
-        this.cuckooHashTable = new CuckooHashTable();
     }
 
     public void addColumn(String columnName) {
@@ -28,17 +26,6 @@ public class Table {
         Record newRecord = new Record(columnOrder, values); // Match Col to Value
 
         records.put(newRecord.getId(), newRecord); // Add to HashTable
-
-        int id = (Integer) values.get(0);
-        for (int i = 1; i < columnOrder.size(); i++) { // Add to AVL Tree
-            columns.get(columnOrder.get(i)).insert(values.get(i), id); // Add to all Trees
-        }
-    }
-
-    public void insertRecordCuckoo(List<Object> values) {
-        Record newRecord = new Record(columnOrder, values); // Match Col to Value
-
-        cuckooHashTable.insert(newRecord);
 
         int id = (Integer) values.get(0);
         for (int i = 1; i < columnOrder.size(); i++) { // Add to AVL Tree
@@ -64,22 +51,6 @@ public class Table {
         }
     }
 
-    public void deleteRecordsCuckoo(List<Integer> list) {
-        for (Integer id : list) {
-            Record record = cuckooHashTable.get(id);
-            if (record != null) {
-                // Remove from each column's AVL tree
-                for (int i = 1; i < columnOrder.size(); i++) { // Skip the ID column
-                    String columnName = columnOrder.get(i);
-                    columns.get(columnName).remove(record.getColumnValue(columnName), id);
-                }
-                // Remove from Cuckoo Hash Table
-                cuckooHashTable.delete(id);
-            }
-        }
-    }
-
-
     public void updateRecord(List<Integer> list, String columnName, Object value) {
         AVLTree<Object> tree = columns.get(columnName);
         for (Integer id : list) {
@@ -88,21 +59,6 @@ public class Table {
             tree.remove(record.getColumnValue(columnName), id);
             tree.insert(value, record.getId());
             record.setColumnValue(columnName, value);
-        }
-    }
-
-    public void updateRecordCuckoo(List<Integer> ids, String columnName, Object newValue) {
-        AVLTree<Object> tree = columns.get(columnName);
-        for (Integer id : ids) {
-            Record record = cuckooHashTable.get(id);
-            if (record == null) continue;
-
-            // Update AVL tree for the column
-            tree.remove(record.getColumnValue(columnName), id);
-            tree.insert(newValue, id);
-
-            // Update the record
-            record.setColumnValue(columnName, newValue);
         }
     }
 
