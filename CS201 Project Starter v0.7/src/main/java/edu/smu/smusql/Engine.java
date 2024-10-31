@@ -7,9 +7,9 @@ import java.util.Objects;
 import java.util.Set;
 
 import edu.smu.smusql.ErrorChecks.TypeConverter;
-//import edu.smu.smusql.pair1.CuckooTable;
+import edu.smu.smusql.pair1.CuckooTable;
 //import edu.smu.smusql.pair1.Table;
-import edu.smu.smusql.pair1.MHCTable;
+//import edu.smu.smusql.pair1.MHCTable;
 
 public class Engine {
 
@@ -66,8 +66,8 @@ public class Engine {
 
         // Get the table
 //        Table tableToAdd = db.getTable(tableName);
-//        CuckooTable tableToAdd = db.getTable(tableName);
-        MHCTable tableToAdd = db.getTable(tableName);
+        CuckooTable tableToAdd = db.getTable(tableName);
+//        MHCTable tableToAdd = db.getTable(tableName);
 
         // Add record to the table ##
         tableToAdd.insertRecord(convertedParameters);
@@ -90,8 +90,8 @@ public class Engine {
         List<String> parsedCommand = Parser.parseSelect(query);
         // col operator value, col operator value, logic
 //        Table tableToSelectFrom = db.getTable(tableName);
-//        CuckooTable tableToSelectFrom = db.getTable(tableName);
-        MHCTable tableToSelectFrom = db.getTable(tableName);
+        CuckooTable tableToSelectFrom = db.getTable(tableName);
+//        MHCTable tableToSelectFrom = db.getTable(tableName);
 
         if (Objects.equals(parsedCommand.get(0), "basic")) {
             return tableToSelectFrom.getAll();
@@ -105,7 +105,7 @@ public class Engine {
         return tableToSelectFrom.formatRecords(listOfIds);
     }
 
-    private List<Integer> getRecordIds(MHCTable table, List<String> conditions) {
+    private List<Integer> getRecordIds(CuckooTable table, List<String> conditions) {
         String[] splitCond = new String[3];
 
         if (conditions.size() == 1) { // 1 condition
@@ -149,8 +149,8 @@ public class Engine {
      */
     public String update(String tableName, String query) {
 //        Table table = db.getTable(tableName);
-//        CuckooTable table = db.getTable(tableName);
-        MHCTable table = db.getTable(tableName);
+        CuckooTable table = db.getTable(tableName);
+//        MHCTable table = db.getTable(tableName);
 
         List<String> parsedUpdate = Parser.updateParser(query);
 
@@ -187,8 +187,8 @@ public class Engine {
     public String delete(String tableName, String query) {
         List<String> parsedDelete = Parser.parseDelete(query);
 //        Table table = db.getTable(tableName);
-//        CuckooTable table = db.getTable(tableName);
-        MHCTable table = db.getTable(tableName);
+        CuckooTable table = db.getTable(tableName);
+//        MHCTable table = db.getTable(tableName);
         List<Integer> listOfId = getRecordIds(table, Parser.parseConditions(parsedDelete.get(1)));
         
         if (listOfId.isEmpty()) {
