@@ -133,6 +133,29 @@ public class MHCTable {
         return result;
     }
 
+    public List<Integer> getBetween(String colName, Object lowerBound, Object upperBound) {
+        List<Integer> result = new ArrayList<>();
+
+        if ("id".equals(colName)) {
+            // If the column is "id", retrieve directly from the cuckoo hash table
+            for (int id = (Integer) lowerBound; id <= (Integer) upperBound; id++) {
+                Record record = mhcHashTable.get(id);
+                if (record != null) {
+                    result.add(id);
+                }
+            }
+        } 
+
+        // For other columns, check in the corresponding AVL tree
+        AVLTree<Object> tree = columns.get(colName);
+        if (tree == null)
+            return result; // Early exit if column does not exist
+
+        // Apply condition using the AVL tree for greater than or less than operators
+        result.addAll(tree.findBetween(lowerBound, upperBound));
+        return result;
+    }
+
     // Helper method to evaluate condition
     private boolean satisfiesCondition(Object columnValue, String operator, Object value) {
         if (columnValue instanceof Comparable && value instanceof Comparable) {
@@ -179,5 +202,9 @@ public class MHCTable {
             sb.append(record.toString(columnOrder)); // Format the record based on column order
         }
         return sb.toString();
+    }
+
+    public long getMemoryUsage() {
+        return Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
     }
 }

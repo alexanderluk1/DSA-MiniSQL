@@ -105,6 +105,39 @@ public class AVLTree<K> {
         }
     }
 
+    public List<Integer> findBetween(K lowerBound, K upperBound) {
+        List<Integer> result = new ArrayList<>();
+        findBetweenRecursive(root, lowerBound, upperBound, result);
+        return result;
+    }
+    
+    private void findBetweenRecursive(AVLNode<K> node, K lowerBound, K upperBound, List<Integer> result) {
+        if (node == null) return;
+    
+        if (lowerBound instanceof Comparable && node.getKey() instanceof Comparable) {
+            Comparable<K> lower = (Comparable<K>) lowerBound;
+            Comparable<K> upper = (Comparable<K>) upperBound;
+            int lowerComp = lower.compareTo(node.getKey());
+            int upperComp = upper.compareTo(node.getKey());
+    
+            // Traverse left if the current key is greater than the lower bound
+            if (lowerComp < 0) {
+                findBetweenRecursive(node.getLeft(), lowerBound, upperBound, result);
+            }
+    
+            // Add current node's values if it is within the bounds
+            if (lowerComp < 0 && upperComp > 0) {
+                result.addAll(node.getValues());
+            }
+    
+            // Traverse right if the current key is less than the upper bound
+            if (upperComp > 0) {
+                findBetweenRecursive(node.getRight(), lowerBound, upperBound, result);
+            }
+        }
+    }
+    
+
     private AVLNode<K> largestOnLeft(AVLNode<K> node) {
         AVLNode<K> current = node;
         while (current.getRight() != null) {

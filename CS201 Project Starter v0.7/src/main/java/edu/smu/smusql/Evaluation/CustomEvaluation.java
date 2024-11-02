@@ -30,31 +30,32 @@ public class CustomEvaluation {
         prepopulateTables();
 
         // Execute n queries equally for each type of query
-       int baseExecutionPerQuery = numberOfQueries / QueryToExecute.values().length;
-       int remainingQueries = numberOfQueries % QueryToExecute.values().length;
+        int baseExecutionPerQuery = numberOfQueries / QueryToExecute.values().length;
+        int remainingQueries = numberOfQueries % QueryToExecute.values().length;
 
-       executeEqually(baseExecutionPerQuery, random);
+        executeEqually(baseExecutionPerQuery, random);
 
-       // Distribute the remaining queries randomly
-       List<QueryToExecute> queryTypes = new ArrayList<>(List.of(QueryToExecute.values()));
-       for (int i = 0; i < remainingQueries; i++) {
-           QueryToExecute randomQuery = queryTypes.get(random.nextInt(queryTypes.size()));
-           executeSpecificQuery(randomQuery, random);
-       }
+        // Distribute the remaining queries randomly
+        List<QueryToExecute> queryTypes = new ArrayList<>(List.of(QueryToExecute.values()));
+        for (int i = 0; i < remainingQueries; i++) {
+            QueryToExecute randomQuery = queryTypes.get(random.nextInt(queryTypes.size()));
+            executeSpecificQuery(randomQuery, random);
+        }
 
-       long endTime = System.nanoTime();
-       double totalElapsedTime = (endTime - startTime) / 1_000_000_000.0;
+        long endTime = System.nanoTime();
+        double totalElapsedTime = (endTime - startTime) / 1_000_000_000.0;
 
-       if (numberOfQueries == 1000) { // first run
-        Summary.clearSummaryCSV();
-       }
+        if (numberOfQueries == 1000) { // first run
+            Summary.clearSummaryCSV();
+        }
 
-       // Print the summary of actions taken
-       printSummary(numberOfQueries, totalElapsedTime);
-       for (QueryToExecute queryType : QueryToExecute.values()) {
-        Double executionTime = queryTimeMap.getOrDefault(queryType, 0.0);
-        Summary.storeTiming(queryType, executionTime, numberOfQueries);
-    }
+        // Print the summary of actions taken
+        printSummary(numberOfQueries, totalElapsedTime);
+        dbEngine.printAllMemoryUsageStats();
+        for (QueryToExecute queryType : QueryToExecute.values()) {
+            Double executionTime = queryTimeMap.getOrDefault(queryType, 0.0);
+            Summary.storeTiming(queryType, executionTime, numberOfQueries);
+        }
     }
 
     // Method to create initial tables
@@ -93,7 +94,7 @@ public class CustomEvaluation {
     }
 
     private static void executeSpecificQuery(QueryToExecute query, Random random) {
-        long queryStartTime = System.nanoTime();  // Start timer for individual query
+        long queryStartTime = System.nanoTime(); // Start timer for individual query
 
         switch (query) {
             case SIMPLE_INSERT:
@@ -101,8 +102,8 @@ public class CustomEvaluation {
                 insertCount++;
                 break;
             case SIMPLE_SELECT:
-                dbEngine.executeSQL(generateSimpleSelectQuery(random));
-                selectCount++;
+                // dbEngine.executeSQL(generateSimpleSelectQuery(random));
+                // selectCount++;
                 break;
             case SIMPLE_UPDATE:
                 dbEngine.executeSQL(generateUpdateQuery(random));
@@ -126,13 +127,12 @@ public class CustomEvaluation {
                 break;
         }
 
-        long queryEndTime = System.nanoTime();  // End timer for individual query
+        long queryEndTime = System.nanoTime(); // End timer for individual query
         double queryElapsedTime = (queryEndTime - queryStartTime) / 1_000_000_000.0;
 
         // Accumulate time for this query type
         queryTimeMap.put(query, queryTimeMap.getOrDefault(query, 0.0) + queryElapsedTime);
     }
-
 
     private static void randomExecution(int numberOfQueries, Random random) {
         for (int i = 0; i < numberOfQueries; i++) {
@@ -145,32 +145,34 @@ public class CustomEvaluation {
         }
     }
 
-    // Method to execute a random query (INSERT, SELECT, UPDATE, DELETE, Complex SELECT, Complex UPDATE, Complex DELETE)
+    // Method to execute a random query (INSERT, SELECT, UPDATE, DELETE, Complex
+    // SELECT, Complex UPDATE, Complex DELETE)
     private static void executeRandomQuery(Random random) {
-        int queryType = random.nextInt(7); // Choose between INSERT, SELECT, UPDATE, DELETE, Complex SELECT, Complex UPDATE, Complex DELETE
+        int queryType = random.nextInt(7); // Choose between INSERT, SELECT, UPDATE, DELETE, Complex SELECT, Complex
+                                           // UPDATE, Complex DELETE
 
         switch (queryType) {
-            case 0:  // INSERT query
+            case 0: // INSERT query
                 dbEngine.executeSQL(generateInsertQuery(random));
                 insertCount++;
                 break;
-            case 1:  // SELECT query (simple)
+            case 1: // SELECT query (simple)
                 dbEngine.executeSQL(generateSimpleSelectQuery(random));
                 selectCount++;
                 break;
-            case 2:  // UPDATE query
+            case 2: // UPDATE query
                 dbEngine.executeSQL(generateUpdateQuery(random));
                 updateCount++;
                 break;
-            case 3:  // DELETE query
+            case 3: // DELETE query
                 dbEngine.executeSQL(generateDeleteQuery(random));
                 deleteCount++;
                 break;
-            case 4:  // Complex SELECT query with WHERE, AND, OR, >, <, LIKE
+            case 4: // Complex SELECT query with WHERE, AND, OR, >, <, LIKE
                 dbEngine.executeSQL(generateComplexSelectQuery(random));
                 complexSelectCount++;
                 break;
-            case 5:  // Complex UPDATE query with WHERE
+            case 5: // Complex UPDATE query with WHERE
                 dbEngine.executeSQL(generateComplexUpdateQuery(random));
                 complexUpdateCount++;
                 break;
@@ -201,10 +203,10 @@ public class CustomEvaluation {
                     random.nextInt(1000),
                     random.nextInt(50));
             case 3 -> String.format("INSERT INTO student VALUES (%d, 'Student%d', %d, %.2f, %b)",
-                    idCounter++,                // id
-                    random.nextInt(10000),                // name with Student prefix
-                    random.nextInt(60) + 16,              // age between 16 and 75
-                    random.nextDouble() * 4.0,            // gpa between 0.0 and 4.0
+                    idCounter++, // id
+                    random.nextInt(10000), // name with Student prefix
+                    random.nextInt(60) + 16, // age between 16 and 75
+                    random.nextDouble() * 4.0, // gpa between 0.0 and 4.0
                     random.nextBoolean());
             default -> "";
         };
@@ -294,7 +296,7 @@ public class CustomEvaluation {
                 "INSERT INTO orders VALUES (2, 2, 2, 1)", // Alice bought 1 Smartphone
                 "INSERT INTO orders VALUES (3, 3, 3, 1)", // Bob bought 1 Table
                 "INSERT INTO orders VALUES (4, 4, 4, 4)", // Charlie bought 4 Chairs
-                "INSERT INTO orders VALUES (5, 5, 5, 2)"  // Diana bought 2 Headphones
+                "INSERT INTO orders VALUES (5, 5, 5, 2)" // Diana bought 2 Headphones
         };
 
         for (String insertCommand : insertCommands) {
@@ -308,26 +310,26 @@ public class CustomEvaluation {
 
     // Generate a simple SELECT query
     private static String generateSimpleSelectQuery(Random random) {
-        String[] tables = {"users", "products", "orders", "student"};
+        String[] tables = { "users", "products", "orders", "student" };
         return String.format("SELECT * FROM %s", tables[random.nextInt(tables.length)]);
     }
 
     // Generate a complex SELECT query
     private static String generateComplexSelectQuery(Random random) {
         // Define the available tables
-        String[] tables = {"student", "users", "products", "orders"};
+        String[] tables = { "student", "users", "products", "orders" };
 
         // Randomly select a table
         String tableName = tables[random.nextInt(tables.length)];
 
         // Conditions specific to each table's schema
-        String[] studentConditions = {"age > 20", "gpa > 3.0", "deans_list = true"};
-        String[] userConditions = {"age > 30", "city = 'New York'", "age < 25"};
-        String[] productConditions = {"price < 500.0", "category = 'Electronics'", "price > 100.0"};
-        String[] orderConditions = {"quantity > 5", "user_id = 1", "product_id = 100", "quantity < 50"};
+        String[] studentConditions = { "age > 20", "gpa > 3.0", "deans_list = true" };
+        String[] userConditions = { "age > 30", "city = 'New York'", "age < 25" };
+        String[] productConditions = { "price < 500.0", "category = 'Electronics'", "price > 100.0" };
+        String[] orderConditions = { "quantity > 5", "user_id = 1", "product_id = 100", "quantity < 50" };
 
         // Logical operators
-        String[] logicalOperators = {"AND", "OR"};
+        String[] logicalOperators = { "AND", "OR" };
 
         // Select conditions and operators based on the table
         String[] selectedConditions;
@@ -349,7 +351,8 @@ public class CustomEvaluation {
         // Combine conditions with a logical operator
         String query;
         if (random.nextBoolean()) { // 50% chance to combine two conditions
-            query = String.format("SELECT * FROM %s WHERE %s %s %s", tableName, condition1, logicalOperator, condition2);
+            query = String.format("SELECT * FROM %s WHERE %s %s %s", tableName, condition1, logicalOperator,
+                    condition2);
         } else { // Otherwise, use only one condition
             query = String.format("SELECT * FROM %s WHERE %s", tableName, condition1);
         }
@@ -361,31 +364,32 @@ public class CustomEvaluation {
 
     // Generate an UPDATE query
     private static String generateUpdateQuery(Random random) {
-        String[] tables = {"student", "users", "products", "orders"};
+        String[] tables = { "student", "users", "products", "orders" };
         int tableIndex = random.nextInt(tables.length);
         String tableName = tables[tableIndex];
 
         // Fields to update based on the selected table
         String updateField;
         String idField = "id";
-        Object newValue;  // Use Object to hold either int or double for flexibility
+        Object newValue; // Use Object to hold either int or double for flexibility
 
         switch (tableName) {
             case "student" -> {
                 updateField = "gpa";
-                newValue = Math.round((random.nextDouble() * 4.0) * 100.0) / 100.0; // GPA between 0.00 and 4.00, rounded to 2 decimal places
+                newValue = Math.round((random.nextDouble() * 4.0) * 100.0) / 100.0; // GPA between 0.00 and 4.00,
+                                                                                    // rounded to 2 decimal places
             }
             case "users" -> {
                 updateField = "age";
-                newValue = random.nextInt(60) + 20;  // Age between 20 and 80
+                newValue = random.nextInt(60) + 20; // Age between 20 and 80
             }
             case "products" -> {
                 updateField = "price";
-                newValue = (random.nextDouble() * 999.0) + 1.0;  // Price between 1.00 and 1000.00
+                newValue = (random.nextDouble() * 999.0) + 1.0; // Price between 1.00 and 1000.00
             }
             case "orders" -> {
                 updateField = "quantity";
-                newValue = random.nextInt(100) + 1;  // Quantity between 1 and 100
+                newValue = random.nextInt(100) + 1; // Quantity between 1 and 100
             }
             default -> {
                 updateField = "age";
@@ -397,21 +401,23 @@ public class CustomEvaluation {
 
         // Format the update SQL query, choosing decimal format based on field type
         String updateQuery = String.format("UPDATE %s SET %s = %s WHERE %s = %d",
-                tableName, updateField, newValue instanceof Double ? String.format("%.2f", newValue) : newValue, idField, idValue);
+                tableName, updateField, newValue instanceof Double ? String.format("%.2f", newValue) : newValue,
+                idField, idValue);
 
         // Log what is being updated
         System.out.printf("Updating table '%s': Setting '%s' to %s for record with %s = %d%n",
-                tableName, updateField, newValue instanceof Double ? String.format("%.2f", newValue) : newValue, idField, idValue);
+                tableName, updateField, newValue instanceof Double ? String.format("%.2f", newValue) : newValue,
+                idField, idValue);
 
         return updateQuery;
     }
 
     // Generate a DELETE query
     private static String generateDeleteQuery(Random random) {
-        String[] tables = {"student", "users", "products", "orders"};
+        String[] tables = { "student", "users", "products", "orders" };
         int tableIndex = random.nextInt(tables.length);
         String tableName = tables[tableIndex];
-        String idField = "id";  // Assuming all tables have an "id" field
+        String idField = "id"; // Assuming all tables have an "id" field
 
         int idValue = random.nextInt(10000) + 1; // Generate random id to delete
         return String.format("DELETE FROM %s WHERE %s = %d", tableName, idField, idValue);
@@ -419,7 +425,7 @@ public class CustomEvaluation {
 
     // Generate a complex DELETE query
     private static String generateComplexDeleteQuery(Random random) {
-        String[] tables = {"student", "users", "products", "orders"};
+        String[] tables = { "student", "users", "products", "orders" };
         int tableIndex = random.nextInt(tables.length);
         String tableName = tables[tableIndex];
 
@@ -429,19 +435,22 @@ public class CustomEvaluation {
         switch (tableName) {
             case "student":
                 conditions.add(generateCondition("age", random.nextInt(10) + 18, random.nextBoolean() ? ">" : "<"));
-                conditions.add(generateCondition("gpa", String.format("%.2f", 1.0 + (random.nextDouble() * 3.0)), random.nextBoolean() ? ">" : "<"));
+                conditions.add(generateCondition("gpa", String.format("%.2f", 1.0 + (random.nextDouble() * 3.0)),
+                        random.nextBoolean() ? ">" : "<"));
                 break;
             case "users":
                 conditions.add(generateCondition("age", random.nextInt(60) + 20, random.nextBoolean() ? ">" : "<"));
                 conditions.add(generateCondition("city", "'" + "City" + random.nextInt(10) + "'", "="));
                 break;
             case "products":
-                conditions.add(generateCondition("price", String.format("%.2f", 50.0 + (random.nextDouble() * 500.0)), random.nextBoolean() ? ">" : "<"));
+                conditions.add(generateCondition("price", String.format("%.2f", 50.0 + (random.nextDouble() * 500.0)),
+                        random.nextBoolean() ? ">" : "<"));
                 conditions.add(generateCondition("category", "'" + "Category" + random.nextInt(5) + "'", "="));
                 break;
             case "orders":
                 conditions.add(generateCondition("quantity", random.nextInt(50) + 1, random.nextBoolean() ? ">" : "<"));
-                conditions.add(generateCondition("user_id", random.nextInt(10000) + 1, "=")); // Generates user_id as an integer
+                conditions.add(generateCondition("user_id", random.nextInt(10000) + 1, "=")); // Generates user_id as an
+                                                                                              // integer
                 break;
         }
 
@@ -459,10 +468,9 @@ public class CustomEvaluation {
         return String.format("%s %s %s", field, operator, value);
     }
 
-
     // Generate a complex UPDATE query
     private static String generateComplexUpdateQuery(Random random) {
-        String[] tables = {"users", "products"};
+        String[] tables = { "users", "products" };
         int tableIndex = random.nextInt(tables.length);
         String tableName = tables[tableIndex];
 
@@ -470,7 +478,7 @@ public class CustomEvaluation {
         String conditionField;
         String conditionOperator;
         String conditionValue;
-        Object newValue;  // Use Object to handle both Integer and Double values
+        Object newValue; // Use Object to handle both Integer and Double values
 
         switch (tableName) {
             case "users":
@@ -478,21 +486,21 @@ public class CustomEvaluation {
                 conditionField = "city";
                 conditionOperator = "=";
                 conditionValue = "'City" + random.nextInt(10) + "'"; // Generate a random city
-                newValue = random.nextInt(60) + 20;  // Age as an integer between 20 and 80
+                newValue = random.nextInt(60) + 20; // Age as an integer between 20 and 80
                 break;
             case "products":
                 updateField = "price";
                 conditionField = "category";
                 conditionOperator = "=";
                 conditionValue = "'Category" + random.nextInt(5) + "'"; // Generate a random category
-                newValue = (random.nextDouble() * 999.0) + 1.0;  // Price as a double between 1.0 and 1000.0
+                newValue = (random.nextDouble() * 999.0) + 1.0; // Price as a double between 1.0 and 1000.0
                 break;
             default:
                 updateField = "age";
                 conditionField = "city";
                 conditionOperator = "=";
                 conditionValue = "'City1'";
-                newValue = random.nextInt(60) + 20;  // Default to age as an integer
+                newValue = random.nextInt(60) + 20; // Default to age as an integer
         }
 
         // Format the update SQL query, ensuring price uses %.2f for double values
@@ -515,13 +523,20 @@ public class CustomEvaluation {
         System.out.printf("Total Time Taken: %.6f seconds%n", totalElapsedTime);
 
         System.out.println("\n--- Query Execution Counts and Times ---");
-        System.out.printf("Insert Queries      : %d | Time Taken: %.6f seconds%n", insertCount, queryTimeMap.getOrDefault(SIMPLE_INSERT, 0.0));
-        System.out.printf("Simple SELECT Queries: %d | Time Taken: %.6f seconds%n", selectCount, queryTimeMap.getOrDefault(SIMPLE_SELECT, 0.0));
-        System.out.printf("Update Queries      : %d | Time Taken: %.6f seconds%n", updateCount, queryTimeMap.getOrDefault(SIMPLE_UPDATE, 0.0));
-        System.out.printf("Delete Queries      : %d | Time Taken: %.6f seconds%n", deleteCount, queryTimeMap.getOrDefault(SIMPLE_DELETE, 0.0));
-        System.out.printf("Complex SELECT Queries: %d | Time Taken: %.6f seconds%n", complexSelectCount, queryTimeMap.getOrDefault(COMPLEX_SELECT, 0.0));
-        System.out.printf("Complex UPDATE Queries: %d | Time Taken: %.6f seconds%n", complexUpdateCount, queryTimeMap.getOrDefault(COMPLEX_UPDATE, 0.0));
-        System.out.printf("Complex DELETE Queries: %d | Time Taken: %.6f seconds%n", complexDeleteCount, queryTimeMap.getOrDefault(COMPLEX_DELETE, 0.0));
+        System.out.printf("Insert Queries      : %d | Time Taken: %.6f seconds%n", insertCount,
+                queryTimeMap.getOrDefault(SIMPLE_INSERT, 0.0));
+        System.out.printf("Simple SELECT Queries: %d | Time Taken: %.6f seconds%n", selectCount,
+                queryTimeMap.getOrDefault(SIMPLE_SELECT, 0.0));
+        System.out.printf("Update Queries      : %d | Time Taken: %.6f seconds%n", updateCount,
+                queryTimeMap.getOrDefault(SIMPLE_UPDATE, 0.0));
+        System.out.printf("Delete Queries      : %d | Time Taken: %.6f seconds%n", deleteCount,
+                queryTimeMap.getOrDefault(SIMPLE_DELETE, 0.0));
+        System.out.printf("Complex SELECT Queries: %d | Time Taken: %.6f seconds%n", complexSelectCount,
+                queryTimeMap.getOrDefault(COMPLEX_SELECT, 0.0));
+        System.out.printf("Complex UPDATE Queries: %d | Time Taken: %.6f seconds%n", complexUpdateCount,
+                queryTimeMap.getOrDefault(COMPLEX_UPDATE, 0.0));
+        System.out.printf("Complex DELETE Queries: %d | Time Taken: %.6f seconds%n", complexDeleteCount,
+                queryTimeMap.getOrDefault(COMPLEX_DELETE, 0.0));
         System.out.println("=====================================");
     }
 }

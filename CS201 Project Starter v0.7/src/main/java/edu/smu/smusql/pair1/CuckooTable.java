@@ -52,7 +52,8 @@ public class CuckooTable {
         AVLTree<Object> tree = columns.get(columnName);
         for (Integer id : ids) {
             Record record = cuckooHashTable.get(id);
-            if (record == null) continue;
+            if (record == null)
+                continue;
 
             // Update AVL tree for the column
             tree.remove(record.getColumnValue(columnName), id);
@@ -68,7 +69,8 @@ public class CuckooTable {
         sb.append(printHeader());
 
         // Retrieve all records from CuckooHashTable
-        List<Record> allRecords = cuckooHashTable.getAllRecords(); // Assuming getAllRecords is implemented in CuckooHashTable
+        List<Record> allRecords = cuckooHashTable.getAllRecords(); // Assuming getAllRecords is implemented in
+                                                                   // CuckooHashTable
         for (Record record : allRecords) {
             sb.append(record.toString(columnOrder));
         }
@@ -103,7 +105,8 @@ public class CuckooTable {
 
         // For other columns, check in the corresponding AVL tree
         AVLTree<Object> tree = columns.get(colName);
-        if (tree == null) return result; // Early exit if column does not exist
+        if (tree == null)
+            return result; // Early exit if column does not exist
 
         // Apply condition using the AVL tree for greater than or less than operators
         if (">".equals(operator)) {
@@ -116,6 +119,29 @@ public class CuckooTable {
                 result.addAll(node.getValues());
             }
         }
+        return result;
+    }
+
+    public List<Integer> getBetween(String colName, Object lowerBound, Object upperBound) {
+        List<Integer> result = new ArrayList<>();
+
+        if ("id".equals(colName)) {
+            // If the column is "id", retrieve directly from the cuckoo hash table
+            for (int id = (Integer) lowerBound; id <= (Integer) upperBound; id++) {
+                Record record = cuckooHashTable.get(id);
+                if (record != null) {
+                    result.add(id);
+                }
+            }
+        } 
+
+        // For other columns, check in the corresponding AVL tree
+        AVLTree<Object> tree = columns.get(colName);
+        if (tree == null)
+            return result; // Early exit if column does not exist
+
+        // Apply condition using the AVL tree for greater than or less than operators
+        result.addAll(tree.findBetween(lowerBound, upperBound));
         return result;
     }
 
@@ -165,5 +191,9 @@ public class CuckooTable {
             sb.append(record.toString(columnOrder)); // Format the record based on column order
         }
         return sb.toString();
+    }
+
+    public long getMemoryUsage() {
+        return Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
     }
 }

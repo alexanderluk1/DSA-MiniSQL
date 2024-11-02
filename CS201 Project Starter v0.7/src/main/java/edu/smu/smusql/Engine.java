@@ -6,14 +6,22 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
+import javax.swing.event.TableColumnModelEvent;
+
 import edu.smu.smusql.ErrorChecks.TypeConverter;
+import edu.smu.smusql.Evaluation.MemoryUsageStats;
 import edu.smu.smusql.pair1.CuckooTable;
-//import edu.smu.smusql.pair1.Table;
-//import edu.smu.smusql.pair1.MHCTable;
+import edu.smu.smusql.pair1.Table;
+import edu.smu.smusql.pair1.MHCTable;
 
 public class Engine {
 
     Database db = new Database();
+    MemoryUsageStats createStats = new MemoryUsageStats();
+    MemoryUsageStats insertStats = new MemoryUsageStats();
+    MemoryUsageStats selectStats = new MemoryUsageStats();
+    MemoryUsageStats updateStats = new MemoryUsageStats();
+    MemoryUsageStats deleteStats = new MemoryUsageStats();
 
     public String executeSQL(String query) {
         String[] tokens = query.trim().split("\\s+");
@@ -37,8 +45,11 @@ public class Engine {
      * 3. Output success
      */
     public String create(String tableName, String query) {
+        long memoryBefore = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
         List<String> parsedCommand = Parser.parseCreate(query);
         db.createTable(tableName, parsedCommand);
+        long memoryAfter = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
+        createStats.recordUsage(memoryAfter - memoryBefore);
         return "table created";
     }
 
@@ -53,6 +64,7 @@ public class Engine {
      * 5. Output success
      */
     public String insert(String tableName, String query) {
+        long memoryBefore = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
         List<String> parsedCommand = Parser.parseCreate(query);
 
         // Error Checks
@@ -65,12 +77,14 @@ public class Engine {
         List<Object> convertedParameters = TypeConverter.convertParams(parsedCommand);
 
         // Get the table
-//        Table tableToAdd = db.getTable(tableName);
-        CuckooTable tableToAdd = db.getTable(tableName);
-//        MHCTable tableToAdd = db.getTable(tableName);
+        Table tableToAdd = db.getTable(tableName);
+        // CuckooTable tableToAdd = db.getTable(tableName);
+        // MHCTable tableToAdd = db.getTable(tableName);
 
         // Add record to the table ##
         tableToAdd.insertRecord(convertedParameters);
+        long memoryAfter = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
+        insertStats.recordUsage(memoryAfter - memoryBefore);
         return "success";
     }
 
@@ -87,25 +101,28 @@ public class Engine {
      * 5. Format and return to user
      */
     public String select(String tableName, String query) {
+        long memoryBefore = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
         List<String> parsedCommand = Parser.parseSelect(query);
         // col operator value, col operator value, logic
-//        Table tableToSelectFrom = db.getTable(tableName);
-        CuckooTable tableToSelectFrom = db.getTable(tableName);
-//        MHCTable tableToSelectFrom = db.getTable(tableName);
+        Table tableToSelectFrom = db.getTable(tableName);
+        // CuckooTable tableToSelectFrom = db.getTable(tableName);
+        // MHCTable tableToSelectFrom = db.getTable(tableName);
 
         if (Objects.equals(parsedCommand.get(0), "basic")) {
             return tableToSelectFrom.getAll();
         }
 
         List<Integer> listOfIds = getRecordIds(tableToSelectFrom,
-                                  Parser.parseConditions(parsedCommand.get(1)));
+                Parser.parseConditions(parsedCommand.get(1)));
         if (listOfIds.isEmpty()) {
             return "No rows found";
         }
+        long memoryAfter = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
+        selectStats.recordUsage(memoryAfter - memoryBefore);
         return tableToSelectFrom.formatRecords(listOfIds);
     }
 
-    private List<Integer> getRecordIds(CuckooTable table, List<String> conditions) {
+    private List<Integer> getRecordIds(Table table, List<String> conditions) {
         String[] splitCond = new String[3];
 
         if (conditions.size() == 1) { // 1 condition
@@ -115,6 +132,10 @@ public class Engine {
         }
 
         // 2 condition
+        if (conditions.get(0).split(" ")[0].equals(conditions.get(1).split(" ")[0])) { // same colName
+            return sameColName(table, conditions);
+        }
+
         List<List<Integer>> resultSet = new ArrayList<List<Integer>>();
         for (String condition : conditions.subList(0, 2)) { // excl logic operator
             splitCond = condition.split(" "); // colName operator value
@@ -136,6 +157,88 @@ public class Engine {
         return new ArrayList<>(set1);
     }
 
+    private List<Integer> sameColName(Table table, List<String> conditions) {
+        String[] firstCond = conditions.get(0).split(" "); // colName operator value
+        String[] secondCond = conditions.get(1).split(" "); // colName operator value
+
+        // Case 1: Both conditions are "<"
+        if (firstCond[1].contains("<") && secondCond[1].contains("<")) {
+            if (conditions.get(2).equals("AND")) {// Return the more restrictive condition
+                if (((Comparable) TypeConverter.parseValue(firstCond[2]))
+                        .compareTo(TypeConverter.parseValue(secondCond[2])) < 0) {
+                    return table.getWithCondition(firstCond[0], firstCond[1],
+                            TypeConverter.parseValue(firstCond[2]));
+                } else {
+                    return table.getWithCondition(secondCond[0], secondCond[1],
+                            TypeConverter.parseValue(secondCond[2]));
+                }
+            } else { // OR - Return the less restrictive condition
+                if (((Comparable) TypeConverter.parseValue(firstCond[2]))
+                        .compareTo(TypeConverter.parseValue(secondCond[2])) < 0) {
+                    return table.getWithCondition(secondCond[0], secondCond[1],
+                            TypeConverter.parseValue(secondCond[2]));
+                } else {
+                    return table.getWithCondition(firstCond[0], firstCond[1],
+                            TypeConverter.parseValue(firstCond[2]));
+                }
+
+            }
+        }
+
+        // Case 2: Both conditions are ">"
+        if (firstCond[1].contains(">") && secondCond[1].contains(">")) {
+            // Return the more restrictive condition
+            if (conditions.get(2).equals("AND")) {// Return the more restrictive condition
+                if (((Comparable) TypeConverter.parseValue(firstCond[2]))
+                        .compareTo(TypeConverter.parseValue(secondCond[2])) > 0) {
+                    return table.getWithCondition(firstCond[0], firstCond[1],
+                            TypeConverter.parseValue(firstCond[2]));
+                } else {
+                    return table.getWithCondition(secondCond[0], secondCond[1],
+                            TypeConverter.parseValue(secondCond[2]));
+                }
+            } else { // OR - Return the less restrictive condition
+                if (((Comparable) TypeConverter.parseValue(firstCond[2]))
+                        .compareTo(TypeConverter.parseValue(secondCond[2])) > 0) {
+                    return table.getWithCondition(secondCond[0], secondCond[1],
+                            TypeConverter.parseValue(secondCond[2]));
+                } else {
+                    return table.getWithCondition(firstCond[0], firstCond[1],
+                            TypeConverter.parseValue(firstCond[2]));
+                }
+
+            }
+        }
+
+        // Case 3: One condition "<" and the other ">"
+        if (conditions.get(2).equals("AND") && (firstCond[1].contains("<") && secondCond[1].contains(">")) ||
+                (firstCond[1].contains(">") && secondCond[1].contains("<"))) {
+            // Condition for find betweeen: the one with < must be greater than the one with
+            // >
+            if (firstCond[1].equals("<")) {
+                if (((Comparable) TypeConverter.parseValue(firstCond[2]))
+                        .compareTo(TypeConverter.parseValue(secondCond[2])) > 0) {
+                    return table.getBetween(secondCond[0], TypeConverter.parseValue(secondCond[2]),
+                            TypeConverter.parseValue(firstCond[2]));
+                } else if (secondCond[1].equals("<")) {
+                    if (((Comparable) TypeConverter.parseValue(secondCond[2]))
+                            .compareTo(TypeConverter.parseValue(firstCond[2])) > 0) {
+                        return table.getBetween(firstCond[0], TypeConverter.parseValue(firstCond[2]),
+                                TypeConverter.parseValue(secondCond[2]));
+                    }
+                }
+            }
+        }
+
+        // Case 4: "<" and ">" but not valid range
+        List<List<Integer>> result = new ArrayList<List<Integer>>();
+        result.add(table.getWithCondition(secondCond[0], secondCond[1],
+                TypeConverter.parseValue(secondCond[2])));
+        result.add(table.getWithCondition(firstCond[0], firstCond[1],
+                TypeConverter.parseValue(firstCond[2])));
+        return merge(result.get(0), result.get(1), conditions.get(2));
+    }
+
     /**
      * UPDATE student SET age = 25 WHERE id = 1
      * UPDATE student SET deans_list = True WHERE gpa > 3.8 OR age = 201
@@ -148,9 +251,10 @@ public class Engine {
      * 5. Return success message "Updated 3 rows"
      */
     public String update(String tableName, String query) {
-//        Table table = db.getTable(tableName);
-        CuckooTable table = db.getTable(tableName);
-//        MHCTable table = db.getTable(tableName);
+        long memoryBefore = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
+        Table table = db.getTable(tableName);
+        // CuckooTable table = db.getTable(tableName);
+        // MHCTable table = db.getTable(tableName);
 
         List<String> parsedUpdate = Parser.updateParser(query);
 
@@ -162,8 +266,10 @@ public class Engine {
         if (listOfId.isEmpty()) {
             return "No rows found";
         }
-//        table.updateRecord(listOfId, colName, newValue); // ##
+        // table.updateRecord(listOfId, colName, newValue); // ##
         table.updateRecord(listOfId, colName, newValue); // Cuckoo version ##
+        long memoryAfter = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
+        updateStats.recordUsage(memoryAfter - memoryBefore);
         return listOfId.size() + " records changed";
     }
 
@@ -185,17 +291,20 @@ public class Engine {
      * 4. Return success message
      */
     public String delete(String tableName, String query) {
+        long memoryBefore = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
         List<String> parsedDelete = Parser.parseDelete(query);
-//        Table table = db.getTable(tableName);
-        CuckooTable table = db.getTable(tableName);
-//        MHCTable table = db.getTable(tableName);
+        Table table = db.getTable(tableName);
+        // CuckooTable table = db.getTable(tableName);
+        // MHCTable table = db.getTable(tableName);
         List<Integer> listOfId = getRecordIds(table, Parser.parseConditions(parsedDelete.get(1)));
-        
+
         if (listOfId.isEmpty()) {
             return "No rows found";
         }
-//        table.deleteRecords(listOfId); // ##
+        // table.deleteRecords(listOfId); // ##
         table.deleteRecords(listOfId); // Cuckoo version ##
+        long memoryAfter = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
+        deleteStats.recordUsage(memoryAfter - memoryBefore);
         return listOfId.size() + " records deleted";
     }
 
@@ -208,5 +317,13 @@ public class Engine {
      */
     public boolean checkCommandSyntax(String[] tokens) {
         return false;
+    }
+
+    public void printAllMemoryUsageStats() {
+        createStats.printStats("create");
+        insertStats.printStats("insert");
+        selectStats.printStats("select");
+        updateStats.printStats("update");
+        deleteStats.printStats("delete");
     }
 }

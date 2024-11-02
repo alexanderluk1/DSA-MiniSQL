@@ -111,6 +111,29 @@ public class Table {
         return result;
     }
 
+    public List<Integer> getBetween(String colName, Object lowerBound, Object upperBound) {
+        List<Integer> result = new ArrayList<>();
+
+        if ("id".equals(colName)) {
+            // If the column is "id", retrieve directly from the cuckoo hash table
+            for (int id = (Integer) lowerBound; id <= (Integer) upperBound; id++) {
+                Record record = records.get(id);
+                if (record != null) {
+                    result.add(id);
+                }
+            }
+        } 
+
+        // For other columns, check in the corresponding AVL tree
+        AVLTree<Object> tree = columns.get(colName);
+        if (tree == null)
+            return result; // Early exit if column does not exist
+
+        // Apply condition using the AVL tree for greater than or less than operators
+        result.addAll(tree.findBetween(lowerBound, upperBound));
+        return result;
+    }
+
     private String printHeader() {
         StringBuilder sb = new StringBuilder();
         sb.append("| id         |");
@@ -141,5 +164,9 @@ public class Table {
             sb.append(record.toString(columnOrder));
         }
         return sb.toString();
+    }
+
+    public long getMemoryUsage() {
+        return Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
     }
 }
