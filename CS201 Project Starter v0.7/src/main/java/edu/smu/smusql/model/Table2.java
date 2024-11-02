@@ -109,7 +109,8 @@ public class Table2 {
         }
         String columnName = parts[0];
         String operator = parts[1];
-        Object value = TypeConverter.parseValue(parts[2].replace("'", "")); // Remove quotes for string values
+        // Object value = TypeConverter.parseValue(parts[2].replace("'", "")); // Remove quotes for string values
+        Object value = parts[2].replace("'", ""); // Remove quotes for string values
 
         Object recordValue = record.get(columnName);
         return compare(recordValue, operator, value);
