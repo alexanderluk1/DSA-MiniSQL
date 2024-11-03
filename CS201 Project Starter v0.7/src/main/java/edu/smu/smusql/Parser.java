@@ -65,18 +65,13 @@ public class Parser {
         if (query.contains("WHERE")) {
             int whereIndex = Arrays.asList(tokens).indexOf("WHERE");
             List<String> conditions = new ArrayList<>();
-            List<String> operators = new ArrayList<>();
 
             for (int i = whereIndex + 1; i < tokens.length; i++) {
-                if (tokens[i].equalsIgnoreCase("AND") || tokens[i].equalsIgnoreCase("OR")) {
-                    operators.add(tokens[i].toUpperCase());
-                } else {
-                    conditions.add(tokens[i]);
-                }
+                conditions.add(tokens[i]);
             }
             parsedCommand.add(conditions);
-            parsedCommand.add(operators);
         }
+        
         return parsedCommand;
     }
 

@@ -2,6 +2,8 @@ package edu.smu.smusql.model;
 
 import edu.smu.smusql.ErrorChecks.TypeConverter;
 import edu.smu.smusql.Parser;
+
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import java.util.*;
@@ -103,14 +105,17 @@ public class Table2 {
 
     // Evaluate a single condition
     private boolean evaluateSingleCondition(Map<String, Object> record, String condition) {
-        String[] parts = condition.split(" ");
-        if (parts.length != 3) {
+        // Match conditions like `column operator value` (e.g., `gpa > 3.8`)
+        String regex = "(\\w+)\\s*(=|!=|>|<|>=|<=)\\s*(.+)";
+        Matcher matcher = Pattern.compile(regex).matcher(condition);
+
+        if (!matcher.matches()) {
             throw new IllegalArgumentException("Invalid condition format: " + condition);
         }
-        String columnName = parts[0];
-        String operator = parts[1];
-        // Object value = TypeConverter.parseValue(parts[2].replace("'", "")); // Remove quotes for string values
-        Object value = parts[2].replace("'", ""); // Remove quotes for string values
+
+        String columnName = matcher.group(1);
+        String operator = matcher.group(2);
+        Object value = matcher.group(3).replace("'", ""); // Remove quotes for string values
 
         Object recordValue = record.get(columnName);
         return compare(recordValue, operator, value);

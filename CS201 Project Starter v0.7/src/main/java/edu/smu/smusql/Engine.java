@@ -91,7 +91,6 @@ public class Engine {
             // If there are conditions to evaluate
             if (parsedCommand.size() > 1) {
                 List<String> conditions = (List<String>) parsedCommand.get(1);
-                List<String> operators = (List<String>) parsedCommand.get(2);
 
                 // Join the conditions for use in the Table2 class
                 String combinedCondition = String.join(" ", conditions);
