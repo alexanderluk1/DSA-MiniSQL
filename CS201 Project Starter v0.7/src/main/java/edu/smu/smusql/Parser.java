@@ -102,7 +102,7 @@ public class Parser {
         for (String update : updates) {
             String[] keyValue = update.split("=");
             String key = keyValue[0].trim();
-            Object value = TypeConverter.parseValue(keyValue[1].trim().replace("'", "")); // Convert value appropriately
+            Object value = keyValue[1].trim().replace("'", ""); // Remove quotes
             updatedValues.put(key, value);
         }
 

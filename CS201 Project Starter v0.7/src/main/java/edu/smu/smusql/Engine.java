@@ -141,11 +141,7 @@ public class Engine {
 
             Table2 table = db.getTable(tableName);
             // Update records based on the specified condition
-            table.updateRecords(condition, updatedValues);
-
-            // Count the number of rows updated
-            List<Integer> updatedKeys = table.selectRecords(condition);
-            int rowsUpdated = updatedKeys.size();
+            int rowsUpdated = table.updateRecords(condition, updatedValues);
 
             return rowsUpdated + " row(s) updated.";
         } catch (Exception e) {

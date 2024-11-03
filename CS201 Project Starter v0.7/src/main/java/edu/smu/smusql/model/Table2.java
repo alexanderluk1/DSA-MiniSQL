@@ -146,18 +146,24 @@ public class Table2 {
 
     // Update records based on a condition
     // Update updateRecords to handle complex conditions
-    public void updateRecords(String condition, Map<String, Object> updatedValues) {
+    // Return number of rows updated
+    public int updateRecords(String condition, Map<String, Object> updatedValues) {
+        int count = 0;
+
         List<Integer> keysToUpdate = selectRecords(condition);
         for (int key : keysToUpdate) {
             Map<String, Object> recordToUpdate = bPlusTree.search(key);
             for (String column : updatedValues.keySet()) {
-                if (columns.contains(column)) {
+                if (columns.contains(column) && !recordToUpdate.get(column).equals(updatedValues.get(column))) {
+                    count++;
                     recordToUpdate.put(column, updatedValues.get(column));
                 }
             }
 
             bPlusTree.update(key, recordToUpdate); // Assuming BPlusTree has an update method
         }
+
+        return count;
     }
 
 
