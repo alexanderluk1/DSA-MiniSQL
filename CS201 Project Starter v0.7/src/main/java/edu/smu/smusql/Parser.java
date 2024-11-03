@@ -82,6 +82,9 @@ public class Parser {
      * @return A list containing the table name, updated values, and conditions.
      */
     public static List<Object> parseUpdate(String command) {
+        // Remove the "UPDATE" keyword and trim any extra whitespace
+        command = command.replaceFirst("(?i)^UPDATE\\s+", "").trim();
+
         // Example command: "UPDATE student SET age = 25 WHERE id = 1"
         String[] parts = command.split(" SET | WHERE ");
         if (parts.length < 3) {
