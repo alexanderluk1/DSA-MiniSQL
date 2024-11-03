@@ -167,11 +167,7 @@ public class Engine {
 
             Table2 table = db.getTable(tableName); // Retrieve the table instance
             // Perform the delete operation based on the specified condition
-            table.deleteRecords(condition);
-
-            // Count the number of rows deleted by re-selecting with the same condition
-            List<Integer> deletedKeys = table.selectRecords(condition);
-            int rowsDeleted = deletedKeys.size();
+            int rowsDeleted = table.deleteRecords(condition);
 
             return rowsDeleted + " row(s) deleted."; // Print the number of rows deleted
         } catch (Exception e) {

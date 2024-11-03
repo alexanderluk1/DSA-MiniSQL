@@ -169,11 +169,13 @@ public class Table2 {
 
     // Delete records based on a condition
     // Update deleteRecords to handle complex conditions
-    public void deleteRecords(String condition) {
+    public int deleteRecords(String condition) {
         List<Integer> keysToDelete = selectRecords(condition);
         for (int key : keysToDelete) {
             bPlusTree.delete(key);
         }
+
+        return keysToDelete.size();
     }
 
     public void displayTableInfo() {
