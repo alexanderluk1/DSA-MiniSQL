@@ -60,8 +60,10 @@ public class Table2 {
 
         for (int k = 1; k <= currentKey; k++) {
             Map<String, Object> record = bPlusTree.search(k);
-            if (evaluateCombinedConditions(record, Arrays.asList(conditions), operators)) {
-                resultKeys.add(k);
+            if (record != null) {
+                if (evaluateCombinedConditions(record, Arrays.asList(conditions), operators)) {
+                    resultKeys.add(k);
+                }
             }
         }
 

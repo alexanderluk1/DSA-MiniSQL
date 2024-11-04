@@ -16,7 +16,7 @@ public class Database {
 
     public void createTable (String tableName, List<String> tableFields) {
         // Create a new table to add to HashMap
-        Table2 newTable = new Table2(tableName, tableFields, tableFields.toArray().length);
+        Table2 newTable = new Table2(tableName, tableFields, tableFields.toArray().length * 2);
         tables.put(tableName, newTable);
     }
 
