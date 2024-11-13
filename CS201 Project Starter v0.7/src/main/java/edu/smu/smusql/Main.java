@@ -11,9 +11,7 @@ public class Main {
      */
     static Engine dbEngine = new Engine();
     public static void main(String[] args) {
-
         Scanner scanner = new Scanner(System.in);
-
         System.out.println("smuSQL Starter Code version 0.5");
         System.out.println("Have fun, and good luck!");
 
@@ -29,7 +27,7 @@ public class Main {
                 long elapsedTime = stopTime - startTime;
                 double elapsedTimeInSecond = (double) elapsedTime / 1_000_000_000;
                 System.out.println("Time elapsed: " + elapsedTimeInSecond + " seconds");
-                break;
+
             }
 
             System.out.println(dbEngine.executeSQL(query));
@@ -45,7 +43,7 @@ public class Main {
     public static void autoEvaluate() {
 
         // Set the number of queries to execute
-        int numberOfQueries = 1000000;
+        int numberOfQueries = 100000;
 
         // Create tables
         dbEngine.executeSQL("CREATE TABLE users (id, name, age, city)");

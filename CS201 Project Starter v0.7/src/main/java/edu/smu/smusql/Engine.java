@@ -141,7 +141,7 @@ public class Engine {
 
             Table2 table = db.getTable(tableName);
             // Update records based on the specified condition
-            int rowsUpdated = table.updateRecords(condition, updatedValues);
+            int rowsUpdated = table.updateRecords(condition, (HashMap<String, Object>) updatedValues);
 
             return rowsUpdated + " row(s) updated.";
         } catch (Exception e) {
@@ -177,7 +177,7 @@ public class Engine {
 
     // TEST
     private Map<String, String[]> tables = new HashMap<>(); // Store table structure
-    
+
     public boolean doesTableExist(String tableName) {
         return tables.containsKey(tableName);
     }

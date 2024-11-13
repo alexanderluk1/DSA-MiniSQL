@@ -11,13 +11,13 @@ import java.util.*;
 public class Table2 {
     private String tableName;
     private List<String> columns;
-    private BPlusTree<Integer, Map<String, Object>> bPlusTree;
+    private BPlusTree bPlusTree;
     private int currentKey = 0;
 
     public Table2(String tableName, List<String> columns, int orderNumber) {
         this.tableName = tableName;
         this.columns = columns;
-        this.bPlusTree = new BPlusTree<>(orderNumber);
+        this.bPlusTree = new BPlusTree(orderNumber);
     }
 
     public int getCurrentKey() {
@@ -30,7 +30,7 @@ public class Table2 {
             throw new IllegalArgumentException("Row size must match the number of columns.");
         }
 
-        Map<String, Object> record = new HashMap<>();
+        HashMap<String, Object> record = new HashMap<>();
         for (int i = 0; i < columns.size(); i++) {
             record.put(columns.get(i), row.get(i));
         }
@@ -80,7 +80,7 @@ public class Table2 {
         }
         return records;
     }
-    
+
 
     // Evaluate combined conditions based on AND/OR logic
     private boolean evaluateCombinedConditions(Map<String, Object> record, List<String> conditions, List<String> operators) {
@@ -105,9 +105,19 @@ public class Table2 {
         return overallResult;
     }
 
+    private static Object convertValue(String value, Class<?> targetType) {
+        if (targetType == Integer.class) {
+            return Integer.parseInt(value);
+        } else if (targetType == Double.class) {
+            return Double.parseDouble(value);
+        } else if (targetType == String.class) {
+            return value;
+        } else {
+            throw new IllegalArgumentException("Unsupported target type: " + targetType);
+        }
+    }
     // Evaluate a single condition
     private boolean evaluateSingleCondition(Map<String, Object> record, String condition) {
-        // Match conditions like `column operator value` (e.g., `gpa > 3.8`)
         String regex = "(\\w+)\\s*(=|!=|>|<|>=|<=)\\s*(.+)";
         Matcher matcher = Pattern.compile(regex).matcher(condition);
 
@@ -117,44 +127,61 @@ public class Table2 {
 
         String columnName = matcher.group(1);
         String operator = matcher.group(2);
-        Object value = matcher.group(3).replace("'", ""); // Remove quotes for string values
+        String rawValue = matcher.group(3).replace("'", ""); // Remove quotes
 
         Object recordValue = record.get(columnName);
+        Object value = convertValue(rawValue, recordValue.getClass()); // Custom type conversion
+
         return compare(recordValue, operator, value);
     }
 
+
+
     private boolean compare(Object recordValue, String operator, Object value) {
-        if (recordValue == null) {
+        if (recordValue == null || value == null) {
             return false; // Handle null values appropriately
         }
 
-        switch (operator) {
-            case "=":
-                return Objects.equals(recordValue, value);
-            case "!=":
-                return !Objects.equals(recordValue, value);
-            case ">":
-                return ((Comparable<Object>) recordValue).compareTo(value) > 0;
-            case "<":
-                return ((Comparable<Object>) recordValue).compareTo(value) < 0;
-            case ">=":
-                return ((Comparable<Object>) recordValue).compareTo(value) >= 0;
-            case "<=":
-                return ((Comparable<Object>) recordValue).compareTo(value) <= 0;
-            default:
-                throw new IllegalArgumentException("Unknown operator: " + operator);
+        // Ensure both values are of the same type
+        if (!recordValue.getClass().equals(value.getClass())) {
+            throw new IllegalArgumentException("Mismatched types: " + recordValue.getClass() + " and " + value.getClass());
+        }
+
+        if (recordValue instanceof Comparable) {
+            @SuppressWarnings("unchecked")
+            Comparable<Object> comparableRecordValue = (Comparable<Object>) recordValue;
+
+            switch (operator) {
+                case "=":
+                    return Objects.equals(recordValue, value);
+                case "!=":
+                    return !Objects.equals(recordValue, value);
+                case ">":
+                    return comparableRecordValue.compareTo(value) > 0;
+                case "<":
+                    return comparableRecordValue.compareTo(value) < 0;
+                case ">=":
+                    return comparableRecordValue.compareTo(value) >= 0;
+                case "<=":
+                    return comparableRecordValue.compareTo(value) <= 0;
+                default:
+                    throw new IllegalArgumentException("Unknown operator: " + operator);
+            }
+        } else {
+            throw new IllegalArgumentException("recordValue is not comparable: " + recordValue.getClass());
         }
     }
+
 
     // Update records based on a condition
     // Update updateRecords to handle complex conditions
     // Return number of rows updated
-    public int updateRecords(String condition, Map<String, Object> updatedValues) {
+    public int updateRecords(String condition, HashMap<String, Object> updatedValues) {
         int count = 0;
 
         List<Integer> keysToUpdate = selectRecords(condition);
         for (int key : keysToUpdate) {
-            Map<String, Object> recordToUpdate = bPlusTree.search(key);
+            Map<String, Object> recordToUpdate =  bPlusTree.search(key);
             for (String column : updatedValues.keySet()) {
                 if (columns.contains(column) && !recordToUpdate.get(column).equals(updatedValues.get(column))) {
                     count++;
@@ -182,7 +209,7 @@ public class Table2 {
 
     public void displayTableInfo() {
         System.out.println("Table " + tableName);
-        bPlusTree.traverse();
+        bPlusTree.printTree();
     }
 
     public int getNumberOfColumns() {
