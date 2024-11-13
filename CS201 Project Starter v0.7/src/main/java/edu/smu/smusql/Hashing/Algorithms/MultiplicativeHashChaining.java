@@ -11,7 +11,7 @@ public class MultiplicativeHashChaining {
     private static final int MULTIPLIER = 31;
     private static final int MODULUS = 1_000_003;
     private static final int DEFAULT_SIZE = 1024; // Default initial size
-    private final LinkedList<Entry>[] table;
+    private LinkedList<Entry>[] table;
 
     public MultiplicativeHashChaining() {
         table = new LinkedList[DEFAULT_SIZE];
@@ -25,6 +25,10 @@ public class MultiplicativeHashChaining {
     }
 
     public void put(Integer key, Record value) {
+        if (getLoadFactor() > 0.75) {
+            resize();
+        }
+
         int index = hash(key) % table.length;
         for (Entry entry : table[index]) {
             if (entry.key.equals(key)) {
@@ -33,6 +37,14 @@ public class MultiplicativeHashChaining {
             }
         }
         table[index].add(new Entry(key, value)); // Insert new entry with Record
+    }
+
+    private double getLoadFactor() {
+        int numElements = 0;
+        for (LinkedList<Entry> bucket : table) {
+            numElements += bucket.size();
+        }
+        return (double) numElements / table.length;
     }
 
     public Record get(Integer key) {
@@ -73,6 +85,23 @@ public class MultiplicativeHashChaining {
             }
         }
         return keys;
+    }
+
+    private void resize() {
+        int newSize = table.length * 2;
+        LinkedList<Entry>[] newTable = new LinkedList[newSize];
+        for (int i = 0; i < newSize; i++) {
+            newTable[i] = new LinkedList<>();
+        }
+
+        for (LinkedList<Entry> bucket : table) {
+            for (Entry entry : bucket) {
+                int newIndex = hash(entry.key) % newSize;
+                newTable[newIndex].add(entry);
+            }
+        }
+
+        table = newTable; // Replace old table with the new, resized table
     }
 
     private static class Entry {
