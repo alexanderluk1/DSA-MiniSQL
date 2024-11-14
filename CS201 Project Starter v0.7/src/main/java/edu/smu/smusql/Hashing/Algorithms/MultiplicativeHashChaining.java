@@ -64,6 +64,14 @@ public class MultiplicativeHashChaining {
     
     
 
+    private double getLoadFactor() {
+        int numElements = 0;
+        for (LinkedList<Entry> bucket : table) {
+            numElements += bucket.size();
+        }
+        return (double) numElements / table.length;
+    }
+
     public Record get(Integer key) {
         int index = hash(key, table.length);
         for (Entry entry : table[index]) {
