@@ -14,7 +14,7 @@ public class Database {
         tables = new HashMap<>();
     }
 
-    public void createTable (String tableName, List<String> tableFields) {
+    public void createTable (String tableName, String[] tableFields) {
         // Create a new table to add to HashMap
         Table newTable = new Table(tableName, tableFields, 32);
         tables.put(tableName, newTable);

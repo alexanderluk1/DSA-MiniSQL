@@ -1,5 +1,8 @@
 package edu.smu.smusql;
 
+import edu.smu.smusql.Evaluation.Summary;
+import edu.smu.smusql.Evaluation.CustomEvaluation;
+
 import java.util.*;
 
 // @author ziyuanliu@smu.edu.sg
@@ -21,12 +24,16 @@ public class Main {
             if (query.equalsIgnoreCase("exit")) {
                 break;
             } else if (query.equalsIgnoreCase("evaluate")) {
-                long startTime = System.nanoTime();
-                autoEvaluate();
-                long stopTime = System.nanoTime();
-                long elapsedTime = stopTime - startTime;
-                double elapsedTimeInSecond = (double) elapsedTime / 1_000_000_000;
-                System.out.println("Time elapsed: " + elapsedTimeInSecond + " seconds");
+                    long startTime = System.nanoTime();
+                    autoEvaluate();
+                    long stopTime = System.nanoTime();
+                    long elapsedTime = stopTime - startTime;
+                    double elapsedTimeInSecond = (double) elapsedTime / 1_000_000_000;
+                    System.out.println("Time elapsed: " + elapsedTimeInSecond + " seconds");
+//                  CustomEvaluation.runEvaluation(100000);
+//
+//                  Summary.writeAllTimingsToCSV();
+//                  continue;
 
             }
 

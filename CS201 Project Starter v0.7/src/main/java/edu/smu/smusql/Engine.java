@@ -40,10 +40,12 @@ public class Engine {
             if (db.doesTableExist(tableName)) {
                 return "ERROR: Table already exists";
             }
-            db.createTable(tableName, parsedCommand.subList(1, parsedCommand.size()));
+
+            // Convert List to array for table creation
+            String[] columns = parsedCommand.subList(1, parsedCommand.size()).toArray(new String[0]);
+            db.createTable(tableName, columns);
             return "Table created successfully";
         } catch (Exception e) {
-
             return "ERROR: " + e.getMessage();
         }
     }
@@ -62,13 +64,11 @@ public class Engine {
             if (!db.doesTableExist(tableName)) {
                 return "ERROR: Table does not exist";
             }
-            if (!db.getTable(tableName).insertRecord(parsedCommand.subList(1, parsedCommand.size()))) {
+            if (!db.getTable(tableName).insertRecord(parsedCommand.subList(1, parsedCommand.size()).toArray())) {
                 return "ERROR: Failed to insert record";
             }
             return "Record inserted successfully";
         } catch (Exception e) {
-
-
             return "ERROR: " + e.getMessage();
         }
     }
@@ -89,7 +89,7 @@ public class Engine {
             }
 
             Table table = db.getTable(tableName);
-            List<Map<String, Object>> allRows = table.getRecords();
+            List<Object[]> allRows = table.getRecords();
 
             // If there are conditions to evaluate
             if (parsedCommand.size() > 1) {
@@ -97,11 +97,9 @@ public class Engine {
 
                 // Join the conditions for use in the Table2 class
                 String combinedCondition = String.join(" ", conditions);
-                Map<Integer, Map<String, Object>> selectedKeys = table.selectRecords(combinedCondition); // Use existing method
+                Map<Integer, Object[]> selectedKeys = table.selectRecords(combinedCondition); // Use existing method
                 // Map the selected keys to their corresponding records
-                List<Map<String, Object>> filteredRows = selectedKeys.values()
-                        .stream()
-                        .toList();
+                List<Object[]> filteredRows = selectedKeys.values().stream().toList();
                 return formatRows(filteredRows);
             } else {
                 return formatRows(allRows);
@@ -117,10 +115,10 @@ public class Engine {
      * @param rows The list of rows to format.
      * @return Formatted string representation of the rows.
      */
-    private String formatRows(List<Map<String, Object>> rows) {
+    private String formatRows(List<Object[]> rows) {
         StringBuilder sb = new StringBuilder();
-        for (Map<String, Object> row : rows) {
-            sb.append(row.toString()).append("\n");
+        for (Object[] row : rows) {
+            sb.append(Arrays.toString(row)).append("\n");
         }
         return sb.toString();
     }
@@ -137,9 +135,8 @@ public class Engine {
             List<Object> parsedCommand = Parser.parseUpdate(String.join(" ", tokens));
 
             // Extract the table name, update values, and condition from parsed command
-            String tableName = (String)parsedCommand.get(0);
-            HashMap<String,Object> input = (HashMap<String, Object>) parsedCommand.get(1);
-
+            String tableName = (String) parsedCommand.get(0);
+            HashMap<String, Object> input = (HashMap<String, Object>) parsedCommand.get(1);
 
             // Extract the condition for the update
             String condition = (String) parsedCommand.get(2);
@@ -151,9 +148,9 @@ public class Engine {
 
             // Get the table and perform the update
             Table table = db.getTable(tableName);
-            int rowsUpdated = table.updateRecords(condition,input);
+            int rowsUpdated = table.updateRecords(condition, input);
             // Return the number of rows updated
-            return rowsUpdated +" row(s) updated.";
+            return rowsUpdated + " row(s) updated.";
         } catch (Exception e) {
             return "ERROR: " + e.getMessage();
         }
@@ -196,10 +193,6 @@ public class Engine {
         System.out.println("Running tests...");
 
         Engine engine = new Engine();
-//
-//        {city='Dallas', name='User14450', id=14450, age=40}
-//        {city='Boston', name='User12533', id=12533, age=75}
-//        {city='New York', name='User14318', id=14318, age=29}
         // Test: Create table - Success
         String createTableQuery = "CREATE TABLE users (id INT, city VARCHAR(50), name VARCHAR(50), age INT)";
         String createTableResult = engine.executeSQL(createTableQuery);
@@ -209,14 +202,14 @@ public class Engine {
         assert engine.doesTableExist("users") : "Test failed: Table 'users' does not exist after creation";
 
         // Test: Insert record - Success
-        String insertRecordQuery = "INSERT INTO users VALUES (1, 'Dallas', 'User1', age=40)";
+        String insertRecordQuery = "INSERT INTO users VALUES (1, 'Dallas', 'User1', 40)";
         String insertRecordResult = engine.executeSQL(insertRecordQuery);
         assert insertRecordResult.equals("Record inserted successfully") : "Test failed: Insert Record";
 
         // Test: Select records - Success
         String selectQuery = "SELECT * FROM users";
         String selectResult = engine.executeSQL(selectQuery);
-        assert selectResult.contains("John Doe") : "Test failed: Select Records";
+        assert selectResult.contains("User1") : "Test failed: Select Records";
 
         // Test: Update record - Success
         String updateQuery = "UPDATE users SET name = 'Jane Doe' WHERE id = 1";

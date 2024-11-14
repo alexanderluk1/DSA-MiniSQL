@@ -7,11 +7,11 @@ import java.util.*;
 
 public class Table {
     private String tableName;
-    private List<String> columns;
+    private String[] columns;  // Use array for columns
     private BPlusTree bPlusTree;
     private int currentKey = 0;
 
-    public Table(String tableName, List<String> columns, int orderNumber) {
+    public Table(String tableName, String[] columns, int orderNumber) {
         this.tableName = tableName;
         this.columns = columns;
         this.bPlusTree = new BPlusTree(orderNumber);
@@ -22,28 +22,24 @@ public class Table {
     }
 
     // Insert a row into the table
-    public boolean insertRecord(List<Object> row) {
-        if (row.size() != columns.size()) {
+    public boolean insertRecord(Object[] row) {
+        if (row.length != columns.length) {
             throw new IllegalArgumentException("Row size must match the number of columns.");
         }
 
-        HashMap<String, Object> record = new HashMap<>();
-        for (int i = 0; i < columns.size(); i++) {
-            record.put(columns.get(i), row.get(i));
-        }
-
         // Insert record with an auto-incrementing key
-        bPlusTree.insert(++currentKey, record);
+        bPlusTree.insert(++currentKey, row);
         return true;
     }
 
     // Search for a row by primary key
-    public Map<String, Object> selectRecord(int key) {
-        return bPlusTree.search(key);
+    public Object[] selectRecord(int key) {
+        return (Object[]) bPlusTree.search(key);
     }
 
-    public Map<Integer, Map<String, Object>> selectRecords(String condition) {
-        Map<Integer, Map<String, Object>> resultRecords = new HashMap<>();
+    // Search for multiple records based on a condition
+    public Map<Integer, Object[]> selectRecords(String condition) {
+        Map<Integer, Object[]> resultRecords = new HashMap<>();
         String[] conditions = condition.split("\\s+(AND|OR)\\s+");
         List<String> operators = new ArrayList<>();
 
@@ -56,9 +52,9 @@ public class Table {
         }
 
         for (int k = 1; k <= currentKey; k++) {
-            Map<String, Object> record = bPlusTree.search(k);
+            Object[] record = bPlusTree.search(k);
             if (record != null) {
-                if (evaluateCombinedConditions(record, Arrays.asList(conditions), operators)) {
+                if (evaluateCombinedConditions(record, conditions, operators)) {
                     resultRecords.put(k, record);
                 }
             }
@@ -67,10 +63,10 @@ public class Table {
         return resultRecords;
     }
 
-    public List<Map<String, Object>> getRecords() {
-        List<Map<String, Object>> records = new ArrayList<>();
+    public List<Object[]> getRecords() {
+        List<Object[]> records = new ArrayList<>();
         for (int k = 1; k <= currentKey; k++) {
-            Map<String, Object> record = bPlusTree.search(k);
+            Object[] record = (Object[]) bPlusTree.search(k);
             if (record != null) {
                 records.add(record);
             }
@@ -78,14 +74,13 @@ public class Table {
         return records;
     }
 
-
     // Evaluate combined conditions based on AND/OR logic
-    private boolean evaluateCombinedConditions(Map<String, Object> record, List<String> conditions, List<String> operators) {
+    private boolean evaluateCombinedConditions(Object[] record, String[] conditions, List<String> operators) {
         boolean overallResult = true; // Start with true for AND evaluation
         boolean firstCondition = true;
 
-        for (int i = 0; i < conditions.size(); i++) {
-            boolean result = evaluateSingleCondition(record, conditions.get(i));
+        for (int i = 0; i < conditions.length; i++) {
+            boolean result = evaluateSingleCondition(record, conditions[i]);
 
             if (firstCondition) {
                 overallResult = result;
@@ -115,7 +110,7 @@ public class Table {
     }
 
     // Evaluate a single condition
-    private boolean evaluateSingleCondition(Map<String, Object> record, String condition) {
+    private boolean evaluateSingleCondition(Object[] record, String condition) {
         String regex = "(\\w+)\\s*(>=|<=|!=|=|>|<)\\s*(.+)";
         Matcher matcher = Pattern.compile(regex).matcher(condition);
 
@@ -127,12 +122,17 @@ public class Table {
         String operator = matcher.group(2);
         String rawValue = matcher.group(3).replace("'", ""); // Remove quotes
 
-        Object recordValue = record.get(columnName);
+        // Get the index of the column
+        int columnIndex = Arrays.asList(columns).indexOf(columnName);
+        if (columnIndex == -1) {
+            throw new IllegalArgumentException("Column not found: " + columnName);
+        }
+
+        Object recordValue = record[columnIndex];
         Object value = convertValue(rawValue, recordValue.getClass()); // Custom type conversion
 
         return compare(recordValue, operator, value);
     }
-
 
     private boolean compare(Object recordValue, String operator, Object value) {
         if (recordValue == null || value == null) {
@@ -146,6 +146,8 @@ public class Table {
 
         if (recordValue instanceof Comparable) {
             Comparable<Object> comparableRecordValue = (Comparable<Object>) recordValue;
+
+            // Debugging the operator and values
 
             switch (operator) {
                 case "=":
@@ -168,31 +170,33 @@ public class Table {
         }
     }
 
-
-    // Update records based on a condition
-    // Update updateRecords to handle complex conditions
-    // Return number of rows updated
     public int updateRecords(String condition, HashMap<String, Object> updatedValues) {
         int count = 0;
+
         // Retrieve records to update based on the condition
-        Map<Integer, Map<String, Object>> recordsToUpdate = selectRecords(condition);
+        Map<Integer, Object[]> recordsToUpdate = selectRecords(condition);
 
         // Iterate over each record to be updated
-        for (Map.Entry<Integer, Map<String, Object>> recordEntry : recordsToUpdate.entrySet()) {
+        for (Map.Entry<Integer, Object[]> recordEntry : recordsToUpdate.entrySet()) {
             Integer key = recordEntry.getKey(); // Assuming this is the key for BPlusTree
-            Map<String, Object> record = recordEntry.getValue();
+            Object[] record = recordEntry.getValue();
 
-            // Update the record with new values if the column exists and has changed
-            for (String column : updatedValues.keySet()) {
-                if (columns.contains(column)) {
-                    Object newValue = updatedValues.get(column);
-                    Object currentValue = record.get(column);
+            // Iterate over the columns in the updated values
+            for (Map.Entry<String, Object> entry : updatedValues.entrySet()) {
+                String columnName = entry.getKey(); // Get column name from updatedValues
+                Object newValue = entry.getValue(); // Get new value
 
-                    // Use Objects.equals to avoid NullPointerException
-                    if (!Objects.equals(currentValue, newValue)) {
-                        record.put(column, newValue);
-                        count++;
+                // Get the index of the column in the table
+                int columnIndex = Arrays.asList(columns).indexOf(columnName);
+
+                if (columnIndex != -1) {
+                    // If the value has changed, update it
+                    if (!Objects.equals(record[columnIndex], newValue)) {
+                        record[columnIndex] = newValue; // Update record with new value
+                        count++; // Increment count for each update
                     }
+                } else {
+                    System.out.println("Column not found: " + columnName);
                 }
             }
 
@@ -204,11 +208,9 @@ public class Table {
     }
 
 
-
     // Delete records based on a condition
-    // Update deleteRecords to handle complex conditions
     public int deleteRecords(String condition) {
-        Map<Integer, Map<String, Object>> recordsToDelete = selectRecords(condition);
+        Map<Integer, Object[]> recordsToDelete = selectRecords(condition);
         for (int key : recordsToDelete.keySet()) {
             bPlusTree.delete(key);
         }
@@ -222,6 +224,6 @@ public class Table {
     }
 
     public int getNumberOfColumns() {
-        return columns.size();
+        return columns.length; // Adjusted to use array length
     }
 }
