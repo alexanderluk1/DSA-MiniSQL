@@ -12,10 +12,10 @@ public class MHCTable {
     private HashMap<String, AVLTree<Object>> columns; // Column name and Tree
     private List<String> columnOrder; // maintain order of col
 
-    public MHCTable() {
+    public MHCTable(double loadFactor) {
         this.columns = new HashMap<>();
         this.columnOrder = new ArrayList<>();
-        this.mhcHashTable = new MultiplicativeHashChaining();
+        this.mhcHashTable = new MultiplicativeHashChaining(loadFactor);
     }
 
     public void addColumn(String columnName) {

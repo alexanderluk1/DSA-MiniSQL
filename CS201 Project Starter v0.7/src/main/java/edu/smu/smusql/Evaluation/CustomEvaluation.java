@@ -51,7 +51,6 @@ public class CustomEvaluation {
 
         // Print the summary of actions taken
         printSummary(numberOfQueries, totalElapsedTime);
-        dbEngine.printAllMemoryUsageStats();
         for (QueryToExecute queryType : QueryToExecute.values()) {
             Double executionTime = queryTimeMap.getOrDefault(queryType, 0.0);
             Summary.storeTiming(queryType, executionTime, numberOfQueries);
@@ -102,8 +101,8 @@ public class CustomEvaluation {
                 insertCount++;
                 break;
             case SIMPLE_SELECT:
-                // dbEngine.executeSQL(generateSimpleSelectQuery(random));
-                // selectCount++;
+                dbEngine.executeSQL(generateSimpleSelectQuery(random));
+                selectCount++;
                 break;
             case SIMPLE_UPDATE:
                 dbEngine.executeSQL(generateUpdateQuery(random));
@@ -397,7 +396,7 @@ public class CustomEvaluation {
             }
         }
 
-        int idValue = random.nextInt(10000) + 1; // Generate random id to update
+        int idValue = random.nextInt(5) + 1; // Generate random id to update
 
         // Format the update SQL query, choosing decimal format based on field type
         String updateQuery = String.format("UPDATE %s SET %s = %s WHERE %s = %d",
@@ -419,7 +418,7 @@ public class CustomEvaluation {
         String tableName = tables[tableIndex];
         String idField = "id"; // Assuming all tables have an "id" field
 
-        int idValue = random.nextInt(10000) + 1; // Generate random id to delete
+        int idValue = random.nextInt(1000) + 1; // Generate random id to delete
         return String.format("DELETE FROM %s WHERE %s = %d", tableName, idField, idValue);
     }
 

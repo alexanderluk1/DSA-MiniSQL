@@ -11,10 +11,10 @@ public class CuckooTable {
     private HashMap<String, AVLTree<Object>> columns; // Column name and Tree
     private List<String> columnOrder; // maintain order of col
 
-    public CuckooTable() {
+    public CuckooTable(double loadFactor) {
         this.columns = new HashMap<>();
         this.columnOrder = new ArrayList<>();
-        this.cuckooHashTable = new CuckooHashTable();
+        this.cuckooHashTable = new CuckooHashTable(loadFactor);
     }
 
     public void addColumn(String columnName) {

@@ -26,9 +26,9 @@ public class Main {
                 break;
             }
             else if (query.equalsIgnoreCase("evaluate")) {
-                for (int i = 1000; i <= 100000; i*=10) { // i <= 1000000; i *= 10
-                    CustomEvaluation.runEvaluation(i);
-                }
+                // for (int i = 1000; i <= 100000; i*=10) { // i <= 1000000; i *= 10
+                    CustomEvaluation.runEvaluation(100);
+                // }
                 Summary.writeAllTimingsToCSV();
                 continue;
             }

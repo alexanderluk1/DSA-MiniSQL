@@ -6,12 +6,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
-/*
-    Approach: Cuckoo Hashing with two hash functions and rehashing.
-    Use Case: Suitable for handling large datasets with efficient constant time complexity for lookups, inserts, and deletes.
- */
 public class CuckooHashTable {
-    private static final double LOAD_FACTOR = 0.4;
+    private final double loadFactor;
     private static final int INITIAL_CAPACITY = 16;
     private static final int MAX_REHASH_ATTEMPTS = 32;
 
@@ -20,13 +16,20 @@ public class CuckooHashTable {
     private int size;
     private int capacity;
     private final Random random;
+    private int collisionCount;
+    private int table1PlacementCount;
+    private int table2PlacementCount;
 
-    public CuckooHashTable() {
+    public CuckooHashTable(double loadFactor) {
+        this.loadFactor = loadFactor;
         this.capacity = INITIAL_CAPACITY;
         this.table1 = new Record[capacity];
         this.table2 = new Record[capacity];
         this.size = 0;
         this.random = new Random();
+        this.collisionCount = 0;
+        this.table1PlacementCount = 0;
+        this.table2PlacementCount = 0;
     }
 
     // Hash function using multiply-shift hashing for the first table
@@ -48,7 +51,7 @@ public class CuckooHashTable {
             return false; // Record already exists
         }
 
-        if (size >= capacity * LOAD_FACTOR) {
+        if (size >= capacity * loadFactor) {
             resize();
         }
 
@@ -69,9 +72,11 @@ public class CuckooHashTable {
             if (table1[hash1Index] == null) {
                 table1[hash1Index] = record;
                 size++;
+                table1PlacementCount++; // Count successful placements in table1
                 return true;
             }
 
+            collisionCount++;
             Record temp = table1[hash1Index];
             table1[hash1Index] = record;
             record = temp;
@@ -80,9 +85,11 @@ public class CuckooHashTable {
             if (table2[hash2Index] == null) {
                 table2[hash2Index] = record;
                 size++;
+                table2PlacementCount++; // Count successful placements in table2
                 return true;
             }
 
+            collisionCount++;
             temp = table2[hash2Index];
             table2[hash2Index] = record;
             record = temp;
@@ -153,6 +160,8 @@ public class CuckooHashTable {
         table1 = new Record[capacity];
         table2 = new Record[capacity];
         size = 0;
+        table1PlacementCount = 0; // Reset placement counts on resize
+        table2PlacementCount = 0;
 
         for (Record record : oldTable1) {
             if (record != null) {
@@ -165,6 +174,23 @@ public class CuckooHashTable {
                 insert(record);
             }
         }
+    }
+
+    // Method to get the current number of collisions
+    public int getCollisionCount() {
+        return collisionCount;
+    }
+
+    // Method to get the probability of placement in table1
+    public double getTable1PlacementProbability() {
+        int totalPlacements = table1PlacementCount + table2PlacementCount;
+        return totalPlacements == 0 ? 0 : (double) table1PlacementCount / totalPlacements;
+    }
+
+    // Method to get the probability of placement in table2
+    public double getTable2PlacementProbability() {
+        int totalPlacements = table1PlacementCount + table2PlacementCount;
+        return totalPlacements == 0 ? 0 : (double) table2PlacementCount / totalPlacements;
     }
 
     // Helper method to calculate log2 of a number
@@ -182,5 +208,71 @@ public class CuckooHashTable {
         for (int i = 0; i < capacity; i++) {
             System.out.println("Index " + i + ": " + (table2[i] == null ? "null" : table2[i].toString()));
         }
+    }
+
+    // Method to calculate the longest cluster length in both tables
+    public int getLongestClusterLength() {
+        return Math.max(calculateLongestCluster(table1), calculateLongestCluster(table2));
+    }
+
+    // Method to calculate the average cluster length in both tables
+    public double getAverageClusterLength() {
+        int table1Clusters = countClusters(table1);
+        int table2Clusters = countClusters(table2);
+        int totalClusters = table1Clusters + table2Clusters;
+
+        int totalLength = sumClusterLengths(table1) + sumClusterLengths(table2);
+        return totalClusters == 0 ? 0 : (double) totalLength / totalClusters;
+    }
+
+    // Helper method to calculate the longest cluster length in a single table
+    private int calculateLongestCluster(Record[] table) {
+        int maxClusterLength = 0;
+        int currentClusterLength = 0;
+
+        for (Record record : table) {
+            if (record != null) {
+                currentClusterLength++;
+            } else {
+                maxClusterLength = Math.max(maxClusterLength, currentClusterLength);
+                currentClusterLength = 0;
+            }
+        }
+        return Math.max(maxClusterLength, currentClusterLength);
+    }
+
+    // Helper method to count clusters in a single table
+    private int countClusters(Record[] table) {
+        int clusterCount = 0;
+        boolean inCluster = false;
+
+        for (Record record : table) {
+            if (record != null) {
+                if (!inCluster) {
+                    inCluster = true;
+                    clusterCount++;
+                }
+            } else {
+                inCluster = false;
+            }
+        }
+        return clusterCount;
+    }
+
+    // Helper method to sum lengths of all clusters in a single table
+    private int sumClusterLengths(Record[] table) {
+        int totalLength = 0;
+        int currentClusterLength = 0;
+
+        for (Record record : table) {
+            if (record != null) {
+                currentClusterLength++;
+            } else {
+                totalLength += currentClusterLength;
+                currentClusterLength = 0;
+            }
+        }
+        totalLength += currentClusterLength;
+        return totalLength;
     }
 }

@@ -9,7 +9,6 @@ import java.util.Set;
 import javax.swing.event.TableColumnModelEvent;
 
 import edu.smu.smusql.ErrorChecks.TypeConverter;
-import edu.smu.smusql.Evaluation.MemoryUsageStats;
 import edu.smu.smusql.pair1.CuckooTable;
 import edu.smu.smusql.pair1.Table;
 import edu.smu.smusql.pair1.MHCTable;
@@ -17,11 +16,6 @@ import edu.smu.smusql.pair1.MHCTable;
 public class Engine {
 
     Database db = new Database();
-    MemoryUsageStats createStats = new MemoryUsageStats();
-    MemoryUsageStats insertStats = new MemoryUsageStats();
-    MemoryUsageStats selectStats = new MemoryUsageStats();
-    MemoryUsageStats updateStats = new MemoryUsageStats();
-    MemoryUsageStats deleteStats = new MemoryUsageStats();
 
     public String executeSQL(String query) {
         String[] tokens = query.trim().split("\\s+");
@@ -45,11 +39,8 @@ public class Engine {
      * 3. Output success
      */
     public String create(String tableName, String query) {
-        long memoryBefore = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
         List<String> parsedCommand = Parser.parseCreate(query);
         db.createTable(tableName, parsedCommand);
-        long memoryAfter = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
-        createStats.recordUsage(memoryAfter - memoryBefore);
         return "table created";
     }
 
@@ -64,7 +55,6 @@ public class Engine {
      * 5. Output success
      */
     public String insert(String tableName, String query) {
-        long memoryBefore = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
         List<String> parsedCommand = Parser.parseCreate(query);
 
         // Error Checks
@@ -77,14 +67,12 @@ public class Engine {
         List<Object> convertedParameters = TypeConverter.convertParams(parsedCommand);
 
         // Get the table
-        Table tableToAdd = db.getTable(tableName);
-        // CuckooTable tableToAdd = db.getTable(tableName);
+        // Table tableToAdd = db.getTable(tableName);
+        CuckooTable tableToAdd = db.getTable(tableName);
         // MHCTable tableToAdd = db.getTable(tableName);
 
         // Add record to the table ##
         tableToAdd.insertRecord(convertedParameters);
-        long memoryAfter = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
-        insertStats.recordUsage(memoryAfter - memoryBefore);
         return "success";
     }
 
@@ -101,28 +89,26 @@ public class Engine {
      * 5. Format and return to user
      */
     public String select(String tableName, String query) {
-        long memoryBefore = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
+        List<String> result = new ArrayList<>();
+
         List<String> parsedCommand = Parser.parseSelect(query);
         // col operator value, col operator value, logic
-        Table tableToSelectFrom = db.getTable(tableName);
-        // CuckooTable tableToSelectFrom = db.getTable(tableName);
+        // Table tableToSelectFrom = db.getTable(tableName);
+        CuckooTable tableToSelectFrom = db.getTable(tableName);
         // MHCTable tableToSelectFrom = db.getTable(tableName);
 
         if (Objects.equals(parsedCommand.get(0), "basic")) {
-            return tableToSelectFrom.getAll();
+            result.add(tableToSelectFrom.getAll());
+        } else {
+            List<Integer> listOfIds = getRecordIds(tableToSelectFrom,
+                    Parser.parseConditions(parsedCommand.get(1)));
+            result.add(listOfIds.isEmpty() ? "No rows found" : tableToSelectFrom.formatRecords(listOfIds));
         }
 
-        List<Integer> listOfIds = getRecordIds(tableToSelectFrom,
-                Parser.parseConditions(parsedCommand.get(1)));
-        if (listOfIds.isEmpty()) {
-            return "No rows found";
-        }
-        long memoryAfter = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
-        selectStats.recordUsage(memoryAfter - memoryBefore);
-        return tableToSelectFrom.formatRecords(listOfIds);
+        return result.get(0);
     }
 
-    private List<Integer> getRecordIds(Table table, List<String> conditions) {
+    private List<Integer> getRecordIds(CuckooTable table, List<String> conditions) {
         String[] splitCond = new String[3];
 
         if (conditions.size() == 1) { // 1 condition
@@ -157,7 +143,7 @@ public class Engine {
         return new ArrayList<>(set1);
     }
 
-    private List<Integer> sameColName(Table table, List<String> conditions) {
+    private List<Integer> sameColName(CuckooTable table, List<String> conditions) {
         String[] firstCond = conditions.get(0).split(" "); // colName operator value
         String[] secondCond = conditions.get(1).split(" "); // colName operator value
 
@@ -251,9 +237,9 @@ public class Engine {
      * 5. Return success message "Updated 3 rows"
      */
     public String update(String tableName, String query) {
-        long memoryBefore = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
-        Table table = db.getTable(tableName);
-        // CuckooTable table = db.getTable(tableName);
+        List<String> result = new ArrayList<>();
+        // Table table = db.getTable(tableName);
+        CuckooTable table = db.getTable(tableName);
         // MHCTable table = db.getTable(tableName);
 
         List<String> parsedUpdate = Parser.updateParser(query);
@@ -264,14 +250,14 @@ public class Engine {
 
         List<Integer> listOfId = getRecordIds(table, Parser.parseConditions(parsedUpdate.get(3)));
         if (listOfId.isEmpty()) {
-            return "No rows found";
+            result.add("No rows found");
+        } else {
+            result.add(listOfId.size() + "records changed");
+            table.updateRecord(listOfId, colName, newValue); // Cuckoo version ##
         }
-        // table.updateRecord(listOfId, colName, newValue); // ##
-        table.updateRecord(listOfId, colName, newValue); // Cuckoo version ##
-        long memoryAfter = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
-        updateStats.recordUsage(memoryAfter - memoryBefore);
-        return listOfId.size() + " records changed";
-    }
+
+        return result.get(0);
+    };
 
     /**
      * DELETE FROM student WHERE gpa < 2.0
@@ -291,21 +277,19 @@ public class Engine {
      * 4. Return success message
      */
     public String delete(String tableName, String query) {
-        long memoryBefore = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
-        List<String> parsedDelete = Parser.parseDelete(query);
-        Table table = db.getTable(tableName);
-        // CuckooTable table = db.getTable(tableName);
+        List<String> result = new ArrayList<>();
+        // Table table = db.getTable(tableName);
+        CuckooTable table = db.getTable(tableName);
         // MHCTable table = db.getTable(tableName);
-        List<Integer> listOfId = getRecordIds(table, Parser.parseConditions(parsedDelete.get(1)));
 
+        List<Integer> listOfId = getRecordIds(table, Parser.parseConditions(query));
         if (listOfId.isEmpty()) {
-            return "No rows found";
+            result.add("No rows found");
+        } else {
+            result.add(listOfId.size() + " records deleted");
+            table.deleteRecords(listOfId); // Cuckoo version ##
         }
-        // table.deleteRecords(listOfId); // ##
-        table.deleteRecords(listOfId); // Cuckoo version ##
-        long memoryAfter = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
-        deleteStats.recordUsage(memoryAfter - memoryBefore);
-        return listOfId.size() + " records deleted";
+        return result.get(0);
     }
 
     /**
@@ -317,13 +301,5 @@ public class Engine {
      */
     public boolean checkCommandSyntax(String[] tokens) {
         return false;
-    }
-
-    public void printAllMemoryUsageStats() {
-        createStats.printStats("create");
-        insertStats.printStats("insert");
-        selectStats.printStats("select");
-        updateStats.printStats("update");
-        deleteStats.printStats("delete");
     }
 }
