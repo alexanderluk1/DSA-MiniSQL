@@ -97,11 +97,11 @@ public class Engine {
 
                 // Join the conditions for use in the Table2 class
                 String combinedCondition = String.join(" ", conditions);
-                List<Integer> selectedKeys = table.selectRecords(combinedCondition); // Use existing method
-                List<Map<String, Object>> filteredRows = selectedKeys.stream()
-                        .map(table::selectRecord)
+                Map<Integer, Map<String, Object>> selectedKeys = table.selectRecords(combinedCondition); // Use existing method
+                // Map the selected keys to their corresponding records
+                List<Map<String, Object>> filteredRows = selectedKeys.values()
+                        .stream()
                         .toList();
-
                 return formatRows(filteredRows);
             } else {
                 return formatRows(allRows);

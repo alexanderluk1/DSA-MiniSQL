@@ -42,8 +42,8 @@ public class Table {
         return bPlusTree.search(key);
     }
 
-    public List<Integer> selectRecords(String condition) {
-        List<Integer> resultKeys = new ArrayList<>();
+    public Map<Integer, Map<String, Object>> selectRecords(String condition) {
+        Map<Integer, Map<String, Object>> resultRecords = new HashMap<>();
         String[] conditions = condition.split("\\s+(AND|OR)\\s+");
         List<String> operators = new ArrayList<>();
 
@@ -59,12 +59,12 @@ public class Table {
             Map<String, Object> record = bPlusTree.search(k);
             if (record != null) {
                 if (evaluateCombinedConditions(record, Arrays.asList(conditions), operators)) {
-                    resultKeys.add(k);
+                    resultRecords.put(k, record);
                 }
             }
         }
 
-        return resultKeys;
+        return resultRecords;
     }
 
     public List<Map<String, Object>> getRecords() {
@@ -113,6 +113,7 @@ public class Table {
             throw new IllegalArgumentException("Unsupported target type: " + targetType);
         }
     }
+
     // Evaluate a single condition
     private boolean evaluateSingleCondition(Map<String, Object> record, String condition) {
         String regex = "(\\w+)\\s*(>=|<=|!=|=|>|<)\\s*(.+)";
@@ -131,7 +132,6 @@ public class Table {
 
         return compare(recordValue, operator, value);
     }
-
 
 
     private boolean compare(Object recordValue, String operator, Object value) {
@@ -174,33 +174,46 @@ public class Table {
     // Return number of rows updated
     public int updateRecords(String condition, HashMap<String, Object> updatedValues) {
         int count = 0;
+        // Retrieve records to update based on the condition
+        Map<Integer, Map<String, Object>> recordsToUpdate = selectRecords(condition);
 
-        List<Integer> keysToUpdate = selectRecords(condition);
-        for (int key : keysToUpdate) {
-            Map<String, Object> recordToUpdate =  bPlusTree.search(key);
+        // Iterate over each record to be updated
+        for (Map.Entry<Integer, Map<String, Object>> recordEntry : recordsToUpdate.entrySet()) {
+            Integer key = recordEntry.getKey(); // Assuming this is the key for BPlusTree
+            Map<String, Object> record = recordEntry.getValue();
+
+            // Update the record with new values if the column exists and has changed
             for (String column : updatedValues.keySet()) {
-                if (columns.contains(column) && !recordToUpdate.get(column).equals(updatedValues.get(column))) {
-                    count++;
-                    recordToUpdate.put(column, updatedValues.get(column));
+                if (columns.contains(column)) {
+                    Object newValue = updatedValues.get(column);
+                    Object currentValue = record.get(column);
+
+                    // Use Objects.equals to avoid NullPointerException
+                    if (!Objects.equals(currentValue, newValue)) {
+                        record.put(column, newValue);
+                        count++;
+                    }
                 }
             }
 
-            bPlusTree.update(key, recordToUpdate); // Assuming BPlusTree has an update method
+            // Update the B+ tree with the modified record
+            bPlusTree.update(key, record); // Assuming BPlusTree has an update method
         }
 
         return count;
     }
 
 
+
     // Delete records based on a condition
     // Update deleteRecords to handle complex conditions
     public int deleteRecords(String condition) {
-        List<Integer> keysToDelete = selectRecords(condition);
-        for (int key : keysToDelete) {
+        Map<Integer, Map<String, Object>> recordsToDelete = selectRecords(condition);
+        for (int key : recordsToDelete.keySet()) {
             bPlusTree.delete(key);
         }
 
-        return keysToDelete.size();
+        return recordsToDelete.keySet().size();
     }
 
     public void displayTableInfo() {

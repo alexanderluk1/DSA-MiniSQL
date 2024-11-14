@@ -43,7 +43,7 @@ public class Main {
     public static void autoEvaluate() {
 
         // Set the number of queries to execute
-        int numberOfQueries = 1000;
+        int numberOfQueries = 100000;
 
         // Create tables
         dbEngine.executeSQL("CREATE TABLE users (id, name, age, city)");
@@ -97,7 +97,7 @@ public class Main {
             String name = "User" + i;
             int age = 20 + (i % 41); // Ages between 20 and 60
             String city = getRandomCity(random);
-            String insertCommand = String.format("INSERT INTO users VALUES (%d, %s, %d, '%s')", i, name, age, city);
+            String insertCommand = String.format("INSERT INTO users VALUES (%d, %s, %d, %s)", i, name, age, city);
             dbEngine.executeSQL(insertCommand);
         }
         System.out.println("Prepopulating products");
@@ -130,7 +130,7 @@ public class Main {
                 String name = "User" + id;
                 int age = random.nextInt(60) + 20;
                 String city = getRandomCity(random);
-                String insertUserQuery = "INSERT INTO users VALUES (" + id + ", '" + name + "', " + age + ", '" + city + "')";
+                String insertUserQuery = "INSERT INTO users VALUES (" + id + ", " + name + ", " + age + ", " + city + ")";
                 dbEngine.executeSQL(insertUserQuery);
                 break;
             case 1: // Insert into products table
@@ -138,7 +138,7 @@ public class Main {
                 String productName = "Product" + productId;
                 double price = 50 + (random.nextDouble() * 1000);
                 String category = getRandomCategory(random);
-                String insertProductQuery = "INSERT INTO products VALUES (" + productId + ", '" + productName + "', " + price + ", '" + category + "')";
+                String insertProductQuery = "INSERT INTO products VALUES (" + productId + ", " + productName + ", " + price + ", " + category + ")";
                 dbEngine.executeSQL(insertProductQuery);
                 break;
             case 2: // Insert into orders table
