@@ -1,80 +1,42 @@
- package edu.smu.smusql.model;
+package edu.smu.smusql.model;
 
- import edu.smu.smusql.Parser;
+import edu.smu.smusql.Engine;
 
- import java.util.Arrays;
- import java.util.List;
- import java.util.Map;
- import java.util.*;
-
- public class TableTest {
-     public static void main(String[] args) {
-         // Create a new Table with SQL-like commands
-         String createTableQuery = "CREATE TABLE student (id, name, age, gpa, deans_list)";
-         List<String> cols = Arrays.asList("id", "name", "age", "gpa");
-         Table2 table = new Table2("student", cols, 4);
-
-         // Insert records
-         String insertQuery1 = "INSERT INTO student VALUES (1, John, 30, 2.4)";
-         String insertQuery2 = "INSERT INTO student VALUES (2, little_bobby_tables, 34, 1.4)";
-         String insertQuery3 = "INSERT INTO student VALUES (3, Sam, 35, 1.4)";
-         List<Object> r1 = Arrays.asList(1,"Bob",34,1.4);
-         List<Object> r2 = Arrays.asList(1,"Sam",34,1.4);
-         List<Object> r3 = Arrays.asList(1,"Tim",34,1.4);
-         List<Object> r4 = Arrays.asList(1,"Ham",34,1.4);
-
-         table.insertRecord(r1);
-         table.insertRecord(r2);
-         table.insertRecord(r3);
-         table.insertRecord(r4);
-
-         // Select and print records
-         System.out.println("Selecting all records:");
-         for (int i = 1; i <= table.getCurrentKey(); i++) {
-             Map<String, Object> record = table.selectRecord(i);
-             System.out.println("Key " + i + ": " + record);
-         }
+import java.util.*;
 
 
-         System.out.println("Selecting specific records:");
+public class TableTest {
+    public static void main(String[] args) {
+        Engine engine = new Engine();
 
-         String selectQuery = "Select * from student where gpa < 2.0 AND name = little_bobby_tables";
+        // Test: Create table - Success
+        String createTableQuery = "CREATE TABLE student (id, name, age, gpa )";
+        engine.executeSQL(createTableQuery);
 
-         String condition4 = "gpa < 2.0 AND name = little_bobby_tables";
-         List<Integer> results = table.selectRecords(condition4);
-         for (int i = 0; i < results.size(); i++) {
-             Map<String, Object> record = table.selectRecord(results.get(i));
-             System.out.println("Key " + i + ": " + record);
-         }
+        // Test: Insert records - Success
+        String insertRecordQuery1 = "INSERT INTO student VALUES (1, John, 30, 2.4)";
+        String insertRecordQuery2 = "INSERT INTO student VALUES (2, little_bobby_tables, 34, 1.4)";
+        String insertRecordQuery3 = "INSERT INTO student VALUES (3, Sam, 35, 1.4)";
+        engine.executeSQL(insertRecordQuery1);
+        engine.executeSQL(insertRecordQuery2);
+        engine.executeSQL(insertRecordQuery3);
 
-         // Update records without knowing the key
-         String updateQuery = "UPDATE student SET gpa = 3.5 WHERE gpa > 1.0 OR name = little_bobby_tables";
-         HashMap<String, Object> updatedValues = new HashMap<>();
-         updatedValues.put("gpa", 3.5);
+        // Select and print records
+        System.out.println("Selecting all records:");
+        String selectQuery = "SELECT * FROM student";
+        System.out.println(engine.executeSQL(selectQuery));
 
-         table.updateRecords("gpa > 1.0 OR name = little_bobby_tables", updatedValues);
+        // Test: Update records - Success
+        String updateQuery = "UPDATE student SET gpa = 3.5 WHERE gpa <= 1.5 AND name = little_bobby_tables";
+        engine.executeSQL(updateQuery);
 
+        // Test: Delete record - Success
+        String deleteQuery = "DELETE FROM student WHERE gpa = 1.4 OR name = Sam";
+        engine.executeSQL(deleteQuery);
 
-         System.out.println("\nRecords after update:");
-         for (int i = 1; i <= table.getCurrentKey(); i++) {
-             Map<String, Object> record = table.selectRecord(i);
-             System.out.println("Key " + i + ": " + record);
-         }
+        // Test: Select and print remaining records
+        System.out.println("\nRecords after deletion:");
+        System.out.println(engine.executeSQL(selectQuery));
 
-         // Delete records without knowing the key
-         String deleteQuery = "DELETE FROM student WHERE gpa < 2.0 AND name = Sam";
-         table.deleteRecords("gpa < 1.0 OR name = Sam");
-
-         System.out.println("\nRecords after deletion:");
-         for (int i = 1; i <= table.getCurrentKey(); i++) {
-             Map<String, Object> record = table.selectRecord(i);
-             if (record != null) {
-                 System.out.println("Key " + i + ": " + record);
-             }
-         }
-
-
-         System.out.println("\nDisplaying final table info:");
-         table.displayTableInfo();
-     }
- }
+    }
+}

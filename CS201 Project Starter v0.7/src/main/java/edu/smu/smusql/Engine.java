@@ -1,7 +1,7 @@
 package edu.smu.smusql;
 
 import java.util.*;
-import edu.smu.smusql.model.Table2;
+import edu.smu.smusql.model.Table;
 
 public class Engine {
     private Database db = new Database();
@@ -43,6 +43,7 @@ public class Engine {
             db.createTable(tableName, parsedCommand.subList(1, parsedCommand.size()));
             return "Table created successfully";
         } catch (Exception e) {
+
             return "ERROR: " + e.getMessage();
         }
     }
@@ -66,6 +67,8 @@ public class Engine {
             }
             return "Record inserted successfully";
         } catch (Exception e) {
+
+
             return "ERROR: " + e.getMessage();
         }
     }
@@ -85,7 +88,7 @@ public class Engine {
                 return "ERROR: Table does not exist";
             }
 
-            Table2 table = db.getTable(tableName);
+            Table table = db.getTable(tableName);
             List<Map<String, Object>> allRows = table.getRecords();
 
             // If there are conditions to evaluate
@@ -130,20 +133,27 @@ public class Engine {
      */
     private String update(String[] tokens) {
         try {
+            // Parse the update query using Parser class
             List<Object> parsedCommand = Parser.parseUpdate(String.join(" ", tokens));
-            String tableName = (String) parsedCommand.get(0); // Cast to String
-            Map<String, Object> updatedValues = (Map<String, Object>) parsedCommand.get(1); // Cast to Map
-            String condition = (String) parsedCommand.get(2); // Cast to String
 
+            // Extract the table name, update values, and condition from parsed command
+            String tableName = (String)parsedCommand.get(0);
+            HashMap<String,Object> input = (HashMap<String, Object>) parsedCommand.get(1);
+
+
+            // Extract the condition for the update
+            String condition = (String) parsedCommand.get(2);
+
+            // Check if the table exists
             if (!db.doesTableExist(tableName)) {
                 return "ERROR: Table does not exist";
             }
 
-            Table2 table = db.getTable(tableName);
-            // Update records based on the specified condition
-            int rowsUpdated = table.updateRecords(condition, (HashMap<String, Object>) updatedValues);
-
-            return rowsUpdated + " row(s) updated.";
+            // Get the table and perform the update
+            Table table = db.getTable(tableName);
+            int rowsUpdated = table.updateRecords(condition,input);
+            // Return the number of rows updated
+            return rowsUpdated +" row(s) updated.";
         } catch (Exception e) {
             return "ERROR: " + e.getMessage();
         }
@@ -165,7 +175,7 @@ public class Engine {
                 return "ERROR: Table does not exist"; // Check if the table exists
             }
 
-            Table2 table = db.getTable(tableName); // Retrieve the table instance
+            Table table = db.getTable(tableName); // Retrieve the table instance
             // Perform the delete operation based on the specified condition
             int rowsDeleted = table.deleteRecords(condition);
 
@@ -186,9 +196,12 @@ public class Engine {
         System.out.println("Running tests...");
 
         Engine engine = new Engine();
-
+//
+//        {city='Dallas', name='User14450', id=14450, age=40}
+//        {city='Boston', name='User12533', id=12533, age=75}
+//        {city='New York', name='User14318', id=14318, age=29}
         // Test: Create table - Success
-        String createTableQuery = "CREATE TABLE users (id INT, name VARCHAR(50))";
+        String createTableQuery = "CREATE TABLE users (id INT, city VARCHAR(50), name VARCHAR(50), age INT)";
         String createTableResult = engine.executeSQL(createTableQuery);
         assert createTableResult.equals("Table created successfully") : "Test failed: Create Table";
 
@@ -196,7 +209,7 @@ public class Engine {
         assert engine.doesTableExist("users") : "Test failed: Table 'users' does not exist after creation";
 
         // Test: Insert record - Success
-        String insertRecordQuery = "INSERT INTO users VALUES (1, 'John Doe')";
+        String insertRecordQuery = "INSERT INTO users VALUES (1, 'Dallas', 'User1', age=40)";
         String insertRecordResult = engine.executeSQL(insertRecordQuery);
         assert insertRecordResult.equals("Record inserted successfully") : "Test failed: Insert Record";
 

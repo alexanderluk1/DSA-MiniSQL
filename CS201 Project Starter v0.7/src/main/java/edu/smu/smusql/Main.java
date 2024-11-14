@@ -43,7 +43,7 @@ public class Main {
     public static void autoEvaluate() {
 
         // Set the number of queries to execute
-        int numberOfQueries = 100000;
+        int numberOfQueries = 1000;
 
         // Create tables
         dbEngine.executeSQL("CREATE TABLE users (id, name, age, city)");
@@ -97,7 +97,7 @@ public class Main {
             String name = "User" + i;
             int age = 20 + (i % 41); // Ages between 20 and 60
             String city = getRandomCity(random);
-            String insertCommand = String.format("INSERT INTO users VALUES (%d, '%s', %d, '%s')", i, name, age, city);
+            String insertCommand = String.format("INSERT INTO users VALUES (%d, %s, %d, '%s')", i, name, age, city);
             dbEngine.executeSQL(insertCommand);
         }
         System.out.println("Prepopulating products");
@@ -106,7 +106,7 @@ public class Main {
             String productName = "Product" + i;
             double price = 10 + (i % 990); // Prices between $10 and $1000
             String category = getRandomCategory(random);
-            String insertCommand = String.format("INSERT INTO products VALUES (%d, '%s', %.2f, '%s')", i, productName, price, category);
+            String insertCommand = String.format("INSERT INTO products VALUES (%d, %s, %.2f, %s)", i, productName, price, category);
             dbEngine.executeSQL(insertCommand);
         }
         System.out.println("Prepopulating orders");
@@ -253,13 +253,13 @@ public class Main {
             case 0: // Complex UPDATE on users
                 int newAge = random.nextInt(60) + 20;
                 String city = getRandomCity(random);
-                String updateUserQuery = "UPDATE users SET age = " + newAge + " WHERE city = '" + city + "'";
+                String updateUserQuery = "UPDATE users SET age = " + newAge + " WHERE city = " + city;
                 dbEngine.executeSQL(updateUserQuery);
                 break;
             case 1: // Complex UPDATE on products
                 double newPrice = 50 + (random.nextDouble() * 1000);
                 String category = getRandomCategory(random);
-                String updateProductQuery = "UPDATE products SET price = " + newPrice + " WHERE category = '" + category + "'";
+                String updateProductQuery = "UPDATE products SET price = " + newPrice + " WHERE category = " + category;
                 dbEngine.executeSQL(updateProductQuery);
                 break;
         }

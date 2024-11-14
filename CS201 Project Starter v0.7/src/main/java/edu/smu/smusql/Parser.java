@@ -1,8 +1,8 @@
 package edu.smu.smusql;
 
 import java.util.*;
-
-import edu.smu.smusql.ErrorChecks.TypeConverter;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class Parser {
 
@@ -28,7 +28,7 @@ public class Parser {
         String columnsPart = columnsDefinition.substring(1, columnsDefinition.length() - 1);
         parsedCommand.addAll(Arrays.asList(columnsPart.split("\\s*,\\s*")));
 
-        return parsedCommand;
+        return removeDataTypes(parsedCommand);
     }
 
     /**
@@ -73,6 +73,24 @@ public class Parser {
         }
         
         return parsedCommand;
+    }
+
+    public static List<String> removeDataTypes(List<String> columnDefinitions) {
+        List<String> columnsWithoutTypes = new ArrayList<>();
+
+        // Regular expression to match column names
+        String regex = "(\\w+)";
+        Pattern pattern = Pattern.compile(regex);
+
+        for (String definition : columnDefinitions) {
+            Matcher matcher = pattern.matcher(definition);
+            if (matcher.find()) {
+                // Add only the column name (first part before the type)
+                columnsWithoutTypes.add(matcher.group(1));
+            }
+        }
+
+        return columnsWithoutTypes;
     }
 
     /**
@@ -137,7 +155,7 @@ public class Parser {
         } else {
             parsedDeleteCommand.add(""); // Add empty string if no condition exists
         }
-    
+
         return parsedDeleteCommand;
     }
     

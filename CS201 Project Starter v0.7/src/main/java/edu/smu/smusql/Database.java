@@ -1,6 +1,6 @@
 package edu.smu.smusql;
 
-import edu.smu.smusql.model.Table2;
+import edu.smu.smusql.model.Table;
 
 import java.util.*;
 
@@ -8,7 +8,7 @@ import java.util.*;
  * This will contain all the Tables
  */
 public class Database {
-    private final HashMap<String, Table2> tables;
+    private final HashMap<String, Table> tables;
 
     public Database() {
         tables = new HashMap<>();
@@ -16,11 +16,11 @@ public class Database {
 
     public void createTable (String tableName, List<String> tableFields) {
         // Create a new table to add to HashMap
-        Table2 newTable = new Table2(tableName, tableFields, tableFields.toArray().length * 2);
+        Table newTable = new Table(tableName, tableFields, 32);
         tables.put(tableName, newTable);
     }
 
-    public Table2 getTable(String tableName) {
+    public Table getTable(String tableName) {
         return tables.get(tableName);
     }
 

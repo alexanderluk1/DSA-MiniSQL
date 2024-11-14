@@ -1,122 +1,214 @@
-// package edu.smu.smusql.model;
+package edu.smu.smusql.model;
 
-// import edu.smu.smusql.ErrorChecks.TypeConverter;
-// import edu.smu.smusql.utils.PredicateUtils;
-// import edu.smu.smusql.utils.StringFormatter;
-// import edu.smu.smusql.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
-// import java.util.*;
-// import java.util.function.BiPredicate;
-// import java.util.function.Predicate;
+import java.util.*;
 
-// /**
-//  * 1. Use the column name to get the index of the List
-//  * 2. Use the index to amend / access specific column in the record
-//  * 3. To search / delete it will always be O(n)
-//  *
-//  * Therefore, Iterate through outer List in records, Then access that specific index to check
-//  */
-// public class Table {
-//     private final String tableName;
-//     private final List<String> columns;
-//     private final List<Record> records;  // List of rows, where each Record is a row
+public class Table {
+    private String tableName;
+    private List<String> columns;
+    private BPlusTree bPlusTree;
+    private int currentKey = 0;
 
-//     public Table(String tableName, List<String> columns) {
-//         this.tableName = tableName;
-//         this.columns = columns;
-//         this.records = new ArrayList<>();
-//     }
+    public Table(String tableName, List<String> columns, int orderNumber) {
+        this.tableName = tableName;
+        this.columns = columns;
+        this.bPlusTree = new BPlusTree(orderNumber);
+    }
 
-//     public String getTableName() {
-//         return tableName;
-//     }
+    public int getCurrentKey() {
+        return this.currentKey;
+    }
 
-//     public List<String> getColumns() {
-//         return columns;
-//     }
+    // Insert a row into the table
+    public boolean insertRecord(List<Object> row) {
+        if (row.size() != columns.size()) {
+            throw new IllegalArgumentException("Row size must match the number of columns.");
+        }
 
-//     public boolean hasColumn(String field) {
-//         return columns.contains(field);
-//     }
+        HashMap<String, Object> record = new HashMap<>();
+        for (int i = 0; i < columns.size(); i++) {
+            record.put(columns.get(i), row.get(i));
+        }
 
-//     public List<Record> getRow() {
-//         return records;
-//     }
+        // Insert record with an auto-incrementing key
+        bPlusTree.insert(++currentKey, record);
+        return true;
+    }
 
-//     public int getNumberOfColumns() {
-//         return columns.size();
-//     }
+    // Search for a row by primary key
+    public Map<String, Object> selectRecord(int key) {
+        return bPlusTree.search(key);
+    }
 
-//     // Add a new record (row) to the table
-//     public boolean addRecordToTable(List<Object> dataToAdd) {
-//         if (dataToAdd.size() != columns.size()) return false;
-//         Record newRecord = new Record(dataToAdd);
-//         records.add(newRecord);
-//         return true;
-//     }
+    public List<Integer> selectRecords(String condition) {
+        List<Integer> resultKeys = new ArrayList<>();
+        String[] conditions = condition.split("\\s+(AND|OR)\\s+");
+        List<String> operators = new ArrayList<>();
 
-//     public String retrieveAllFromTable() {
-//         return StringFormatter.formatStringForPrintout(columns, records);
-//     }
+        // Capture operators
+        String[] parts = condition.split("\\s+");
+        for (String part : parts) {
+            if (part.equals("AND") || part.equals("OR")) {
+                operators.add(part);
+            }
+        }
 
-//     public String retrieveWithCondition(List<String> command) {
-//         Set<Record> recordsRetrieved = new HashSet<>();
-//         String conditions = command.get(1);
+        for (int k = 1; k <= currentKey; k++) {
+            Map<String, Object> record = bPlusTree.search(k);
+            if (record != null) {
+                if (evaluateCombinedConditions(record, Arrays.asList(conditions), operators)) {
+                    resultKeys.add(k);
+                }
+            }
+        }
 
-//         // Parse the conditions, e.g., "WHERE gpa > 3.8 AND age < 20"
-//         List<String> parsedConditions = Parser.parseSelectConditions(conditions);
+        return resultKeys;
+    }
 
-//         // 1 Condition -> WHERE gpa > 3.8
-//         if (parsedConditions.size() == 1) {
-//             // Expect to get ['gpa', '>', '3.8']
-//             String[] words = parsedConditions.get(0).split(" ");
-
-//             String columnName = words[0];
-//             int columnIndex = getIndexOfColumnName(columnName);
-//             String operator = words[1];
-//             Object inputField = TypeConverter.parseValue(words[2]);
-
-//             // Check each row against the condition
-//             for (Record record : records) {
-//                 Object dbField = record.getField(columnIndex);
-//                 if (PredicateUtils.evaluateCondition(operator, dbField, inputField)) recordsRetrieved.add(record);
-//             }
-//         }
-//         // 2 Conditions
-//         else {
-//             // WHERE gpa > 3.8 AND age < 20
-//             // WHERE gpa > 3.8 OR age < 20
-//             String condition = parsedConditions.get(parsedConditions.size()-1);
-//             parsedConditions.remove(parsedConditions.size() - 1);
-
-//             System.out.println(parsedConditions);
+    public List<Map<String, Object>> getRecords() {
+        List<Map<String, Object>> records = new ArrayList<>();
+        for (int k = 1; k <= currentKey; k++) {
+            Map<String, Object> record = bPlusTree.search(k);
+            if (record != null) {
+                records.add(record);
+            }
+        }
+        return records;
+    }
 
 
-// //            Predicate<Object> firstPredicate = parsedConditions.get(0);
-// //            Predicate<Object> secondPredicate = parsedConditions.get(1);
+    // Evaluate combined conditions based on AND/OR logic
+    private boolean evaluateCombinedConditions(Map<String, Object> record, List<String> conditions, List<String> operators) {
+        boolean overallResult = true; // Start with true for AND evaluation
+        boolean firstCondition = true;
+
+        for (int i = 0; i < conditions.size(); i++) {
+            boolean result = evaluateSingleCondition(record, conditions.get(i));
+
+            if (firstCondition) {
+                overallResult = result;
+                firstCondition = false;
+            } else {
+                String operator = operators.get(i - 1); // Get the operator before this condition
+                if (operator.equals("AND")) {
+                    overallResult = overallResult && result;
+                } else if (operator.equals("OR")) {
+                    overallResult = overallResult || result;
+                }
+            }
+        }
+        return overallResult;
+    }
+
+    private static Object convertValue(String value, Class<?> targetType) {
+        if (targetType == Integer.class) {
+            return Integer.parseInt(value);
+        } else if (targetType == Double.class) {
+            return Double.parseDouble(value);
+        } else if (targetType == String.class) {
+            return value;
+        } else {
+            throw new IllegalArgumentException("Unsupported target type: " + targetType);
+        }
+    }
+    // Evaluate a single condition
+    private boolean evaluateSingleCondition(Map<String, Object> record, String condition) {
+        String regex = "(\\w+)\\s*(>=|<=|!=|=|>|<)\\s*(.+)";
+        Matcher matcher = Pattern.compile(regex).matcher(condition);
+
+        if (!matcher.matches()) {
+            throw new IllegalArgumentException("Invalid condition format: " + condition);
+        }
+
+        String columnName = matcher.group(1);
+        String operator = matcher.group(2);
+        String rawValue = matcher.group(3).replace("'", ""); // Remove quotes
+
+        Object recordValue = record.get(columnName);
+        Object value = convertValue(rawValue, recordValue.getClass()); // Custom type conversion
+
+        return compare(recordValue, operator, value);
+    }
 
 
-//         }
-//         return StringFormatter.formatStringForPrintout(columns, new ArrayList<>(recordsRetrieved));
-//     }
 
-//     public int getIndexOfColumnName(String columnName) {
-//         return columns.indexOf(columnName);
-//     }
+    private boolean compare(Object recordValue, String operator, Object value) {
+        if (recordValue == null || value == null) {
+            return false; // Handle null values appropriately
+        }
 
-// //    public void getValuesOfSpecificColumn(String columnName) {
-// //        for (int i = 0; i < records.size(); i++) {
-// //            Record row = records.get(i);
-// ////            Object value = row.getField(columns.indexOf(columnName));
-// //        }
-// //    }
+        // Ensure both values are of the same type
+        if (!recordValue.getClass().equals(value.getClass())) {
+            throw new IllegalArgumentException("Mismatched types: " + recordValue.getClass() + " and " + value.getClass());
+        }
 
-//     @Override
-//     public String toString() {
-//         return "Table{" +
-//                 "tableName='" + tableName + '\'' +
-//                 ", columns=" + columns +
-//                 ", records=" + records +
-//                 '}';
-//     }
-// }
+        if (recordValue instanceof Comparable) {
+            Comparable<Object> comparableRecordValue = (Comparable<Object>) recordValue;
+
+            switch (operator) {
+                case "=":
+                    return Objects.equals(recordValue, value);
+                case "!=":
+                    return !Objects.equals(recordValue, value);
+                case ">":
+                    return comparableRecordValue.compareTo(value) > 0;
+                case "<":
+                    return comparableRecordValue.compareTo(value) < 0;
+                case ">=":
+                    return comparableRecordValue.compareTo(value) >= 0;
+                case "<=":
+                    return comparableRecordValue.compareTo(value) <= 0;
+                default:
+                    throw new IllegalArgumentException("Unknown operator: " + operator);
+            }
+        } else {
+            throw new IllegalArgumentException("recordValue is not comparable: " + recordValue.getClass());
+        }
+    }
+
+
+    // Update records based on a condition
+    // Update updateRecords to handle complex conditions
+    // Return number of rows updated
+    public int updateRecords(String condition, HashMap<String, Object> updatedValues) {
+        int count = 0;
+
+        List<Integer> keysToUpdate = selectRecords(condition);
+        for (int key : keysToUpdate) {
+            Map<String, Object> recordToUpdate =  bPlusTree.search(key);
+            for (String column : updatedValues.keySet()) {
+                if (columns.contains(column) && !recordToUpdate.get(column).equals(updatedValues.get(column))) {
+                    count++;
+                    recordToUpdate.put(column, updatedValues.get(column));
+                }
+            }
+
+            bPlusTree.update(key, recordToUpdate); // Assuming BPlusTree has an update method
+        }
+
+        return count;
+    }
+
+
+    // Delete records based on a condition
+    // Update deleteRecords to handle complex conditions
+    public int deleteRecords(String condition) {
+        List<Integer> keysToDelete = selectRecords(condition);
+        for (int key : keysToDelete) {
+            bPlusTree.delete(key);
+        }
+
+        return keysToDelete.size();
+    }
+
+    public void displayTableInfo() {
+        System.out.println("Table " + tableName);
+        bPlusTree.printTree();
+    }
+
+    public int getNumberOfColumns() {
+        return columns.size();
+    }
+}

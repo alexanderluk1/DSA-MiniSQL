@@ -191,11 +191,72 @@ public class BPlusTree {
         return null;
     }
 
-    // Handle underflow in a node
     private void handleUnderflow(BPlusTreeNode node, BPlusTreeNode parent) {
-        // Logic to redistribute or merge nodes to maintain B+ Tree properties
-        // To be implemented: merge with sibling or redistribute keys from siblings
+        int nodeIndex = parent.children.indexOf(node);
+
+        // Identify left and right siblings if available
+        BPlusTreeNode leftSibling = (nodeIndex > 0) ? parent.children.get(nodeIndex - 1) : null;
+        BPlusTreeNode rightSibling = (nodeIndex < parent.children.size() - 1) ? parent.children.get(nodeIndex + 1) : null;
+
+        // Minimum number of keys a node can have
+        int minKeys = (order - 1) / 2;
+
+        // Case 1: Try to borrow from the left sibling
+        if (leftSibling != null && leftSibling.keys.size() > minKeys) {
+            // Borrow the rightmost key from the left sibling
+            node.keys.add(0, parent.keys.get(nodeIndex - 1)); // Move the separating key to the underflowing node
+            parent.keys.set(nodeIndex - 1, leftSibling.keys.remove(leftSibling.keys.size() - 1)); // Update parent key
+
+            if (!node.isLeaf) {
+                // Transfer the child pointer
+                node.children.add(0, leftSibling.children.remove(leftSibling.children.size() - 1));
+            }
+        }
+        // Case 2: Try to borrow from the right sibling
+        else if (rightSibling != null && rightSibling.keys.size() > minKeys) {
+            // Borrow the leftmost key from the right sibling
+            node.keys.add(parent.keys.get(nodeIndex)); // Move the separating key to the underflowing node
+            parent.keys.set(nodeIndex, rightSibling.keys.remove(0)); // Update parent key
+
+            if (!node.isLeaf) {
+                // Transfer the child pointer
+                node.children.add(rightSibling.children.remove(0));
+            }
+        }
+        // Case 3: Merge with left or right sibling
+        else {
+            if (leftSibling != null) {
+                // Merge node with left sibling
+                leftSibling.keys.add(parent.keys.remove(nodeIndex - 1)); // Move separating key from parent to left sibling
+                leftSibling.keys.addAll(node.keys); // Merge keys
+                if (!node.isLeaf) {
+                    leftSibling.children.addAll(node.children); // Merge children
+                }
+                parent.children.remove(node); // Remove the underflowing node from the parent
+            } else if (rightSibling != null) {
+                // Merge node with right sibling
+                node.keys.add(parent.keys.remove(nodeIndex)); // Move separating key from parent to node
+                node.keys.addAll(rightSibling.keys); // Merge keys
+                if (!node.isLeaf) {
+                    node.children.addAll(rightSibling.children); // Merge children
+                }
+                parent.children.remove(rightSibling); // Remove the right sibling from the parent
+            }
+
+            // Check if parent needs underflow handling
+            if (parent != root && parent.keys.size() < minKeys) {
+                BPlusTreeNode grandParent = findParent(root, parent);
+                assert grandParent != null;
+                handleUnderflow(parent, grandParent);
+            }
+        }
+
+        // Special case: If the root becomes empty, adjust the root
+        if (parent == root && parent.keys.isEmpty()) {
+            root = (!parent.children.isEmpty()) ? parent.children.get(0) : null;
+        }
     }
+
 
     // Print the structure of the B+ Tree
     public void printTree() {
