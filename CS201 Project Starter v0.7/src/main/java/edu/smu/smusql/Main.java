@@ -24,19 +24,19 @@ public class Main {
             if (query.equalsIgnoreCase("exit")) {
                 break;
             }
-            else if (query.equalsIgnoreCase("eval")) {
+            else if (query.equalsIgnoreCase("evaluate")) {
                 CustomEvaluation.runEvaluation(100000);
                 continue;
             }
-            else if (query.equalsIgnoreCase("evaluate")) {
-                long startTime = System.nanoTime();
-                autoEvaluate();
-                long stopTime = System.nanoTime();
-                long elapsedTime = stopTime - startTime;
-                double elapsedTimeInSecond = (double) elapsedTime / 1_000_000_000;
-                System.out.println("Time elapsed: " + elapsedTimeInSecond + " seconds");
-                break;
-            }
+//            else if (query.equalsIgnoreCase("evaluate")) {
+//                long startTime = System.nanoTime();
+//                autoEvaluate();
+//                long stopTime = System.nanoTime();
+//                long elapsedTime = stopTime - startTime;
+//                double elapsedTimeInSecond = (double) elapsedTime / 1_000_000_000;
+//                System.out.println("Time elapsed: " + elapsedTimeInSecond + " seconds");
+//                break;
+//            }
 
             System.out.println(dbEngine.executeSQL(query));
         }
