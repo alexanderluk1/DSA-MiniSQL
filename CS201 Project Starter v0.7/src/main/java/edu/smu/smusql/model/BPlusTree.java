@@ -34,28 +34,29 @@ public class BPlusTree<K extends Comparable<K>, V> {
         this.size = 0;
     }
 
-    // Modified search function to return a list of values for a key (handles duplicates)
+    // Modified search function to return a list of values for a key (handles
+    // duplicates)
     public List<V> search(K key) {
         BPlusNode<K, V> leaf = findLeaf(key);
-        int idx = Collections.binarySearch(leaf.keys, key);
-        
-        // If key is found, return all associated values
-        if (idx >= 0) {
-            List<V> results = new ArrayList<>();
-            while (idx < leaf.keys.size() && leaf.keys.get(idx).compareTo(key) == 0) {
+        List<V> results = new ArrayList<>();
+
+        // Iterate over the keys in the leaf node from the beginning
+        for (int idx = 0; idx < leaf.keys.size(); idx++) {
+            if (leaf.keys.get(idx).compareTo(key) == 0) {
                 results.add(leaf.values.get(idx));
-                idx++;
+            } else if (leaf.keys.get(idx).compareTo(key) > 0) {
+                // Since the keys are sorted, we can stop once we've gone past the target key
+                break;
             }
-            return results;
         }
-        
-        return Collections.emptyList();  // Return empty list if the key is not found
+
+        return results; // Return empty list if the key is not found
     }
 
     public List<V> searchRangeInclusive(K start, K end) {
         List<V> result = new ArrayList<>();
         BPlusNode<K, V> leaf = findLeaf(start);
-        
+
         while (leaf != null) {
             for (int i = 0; i < leaf.keys.size(); i++) {
                 K key = leaf.keys.get(i);
@@ -75,7 +76,7 @@ public class BPlusTree<K extends Comparable<K>, V> {
     public List<V> searchRangeExclusive(K start, K end) {
         List<V> result = new ArrayList<>();
         BPlusNode<K, V> leaf = findLeaf(start);
-        
+
         while (leaf != null) {
             for (int i = 0; i < leaf.keys.size(); i++) {
                 K key = leaf.keys.get(i);
@@ -115,43 +116,50 @@ public class BPlusTree<K extends Comparable<K>, V> {
     }
 
     public boolean update(K key, V newValue) {
-        if (root == null) return false;
-    
+        if (root == null)
+            return false;
+
         BPlusNode<K, V> leaf = findLeaf(key);
         int idx = Collections.binarySearch(leaf.keys, key);
-    
+
         // If the key doesn't exist, return false
         if (idx < 0) {
             return false;
         }
-    
+
         // Update the value
         leaf.values.set(idx, newValue);
-    
-        // If the leaf node is not the root and the size is smaller than the min threshold, we rebalance
+
+        // If the leaf node is not the root and the size is smaller than the min
+        // threshold, we rebalance
         if (leaf != root && leaf.keys.size() < (order / 2)) {
             rebalanceLeaf(leaf);
         }
-    
+
         return true;
     }
 
     public boolean updateDuplicate(K oldKey, K newKey, V value) {
-        if (root == null) return false;
-    
+        if (root == null)
+            return false;
+
         BPlusNode<K, V> leaf = findLeaf(oldKey);
-        int idx = Collections.binarySearch(leaf.keys, oldKey);
-    
-        // If the key doesn't exist, return false
-        if (idx < 0) {
+
+        // We need to search linearly for the correct instance of oldKey with the
+        // matching value
+        int idx = -1;
+        for (int i = 0; i < leaf.keys.size(); i++) {
+            if (leaf.keys.get(i).compareTo(oldKey) == 0 && leaf.values.get(i).equals(value)) {
+                idx = i;
+                break;
+            }
+        }
+
+        // If the key-value pair doesn't exist, return false
+        if (idx == -1) {
             return false;
         }
 
-        // Find the correct idx with corresponding value due to duplicate keys
-        while (idx < leaf.keys.size() && leaf.keys.get(idx) == oldKey && leaf.values.get(idx) != value) {
-            idx++;
-        }
-    
         // Delete the current column and index
         leaf.keys.remove(idx);
         leaf.values.remove(idx);
@@ -167,17 +175,19 @@ public class BPlusTree<K extends Comparable<K>, V> {
 
         // Insert the new column and index
         insert(newKey, value);
-    
+
         return true;
     }
 
     public boolean delete(K key) {
-        if (root == null) return false;
+        if (root == null)
+            return false;
 
         BPlusNode<K, V> leaf = findLeaf(key);
         int idx = Collections.binarySearch(leaf.keys, key);
-        
-        if (idx < 0) return false;
+
+        if (idx < 0)
+            return false;
 
         leaf.keys.remove(idx);
         leaf.values.remove(idx);
@@ -195,16 +205,23 @@ public class BPlusTree<K extends Comparable<K>, V> {
     }
 
     public boolean deleteDuplicate(K key, V value) {
-        if (root == null) return false;
+        if (root == null)
+            return false;
 
         BPlusNode<K, V> leaf = findLeaf(key);
-        int idx = Collections.binarySearch(leaf.keys, key);
-        
-        if (idx < 0) return false;
 
-        // Find the correct idx with corresponding value due to duplicate keys
-        while (idx < leaf.keys.size() && leaf.keys.get(idx) == key && leaf.values.get(idx) != value) {
-            idx++;
+        // Linear search to find the correct key-value pair
+        int idx = -1;
+        for (int i = 0; i < leaf.keys.size(); i++) {
+            if (leaf.keys.get(i).compareTo(key) == 0 && leaf.values.get(i).equals(value)) {
+                idx = i;
+                break;
+            }
+        }
+
+        // If the key-value pair doesn't exist, return false
+        if (idx == -1) {
+            return false;
         }
 
         leaf.keys.remove(idx);
@@ -226,8 +243,10 @@ public class BPlusTree<K extends Comparable<K>, V> {
         BPlusNode<K, V> node = root;
         while (!node.isLeaf) {
             int idx = Collections.binarySearch(node.keys, key);
-            if (idx < 0) idx = -(idx + 1);
-            else idx++;
+            if (idx < 0)
+                idx = -(idx + 1);
+            else
+                idx++;
             node = node.children.get(idx);
         }
         return node;
@@ -239,7 +258,7 @@ public class BPlusTree<K extends Comparable<K>, V> {
 
         newLeaf.keys = new ArrayList<>(leaf.keys.subList(mid, leaf.keys.size()));
         newLeaf.values = new ArrayList<>(leaf.values.subList(mid, leaf.values.size()));
-        
+
         leaf.keys.subList(mid, leaf.keys.size()).clear();
         leaf.values.subList(mid, leaf.values.size()).clear();
 
@@ -274,11 +293,11 @@ public class BPlusTree<K extends Comparable<K>, V> {
     private void splitInternal(BPlusNode<K, V> node) {
         int mid = node.keys.size() / 2;
         K promoteKey = node.keys.get(mid);
-        
+
         BPlusNode<K, V> newNode = new BPlusNode<>(false);
         newNode.keys = new ArrayList<>(node.keys.subList(mid + 1, node.keys.size()));
         newNode.children = new ArrayList<>(node.children.subList(mid + 1, node.children.size()));
-        
+
         node.keys.subList(mid, node.keys.size()).clear();
         node.children.subList(mid + 1, node.children.size()).clear();
 
@@ -288,7 +307,7 @@ public class BPlusTree<K extends Comparable<K>, V> {
     private void rebalanceLeaf(BPlusNode<K, V> leaf) {
         BPlusNode<K, V> parent = findParent(root, leaf);
         int idx = findChildIndex(parent, leaf);
-        
+
         // Try borrowing from left sibling
         if (idx > 0) {
             BPlusNode<K, V> leftSibling = parent.children.get(idx - 1);
@@ -316,47 +335,51 @@ public class BPlusTree<K extends Comparable<K>, V> {
     }
 
     private BPlusNode<K, V> findParent(BPlusNode<K, V> root, BPlusNode<K, V> node) {
-        if (root == null || root.isLeaf) return null;
-        
+        if (root == null || root.isLeaf)
+            return null;
+
         for (int i = 0; i < root.children.size(); i++) {
-            if (root.children.get(i) == node) return root;
+            if (root.children.get(i) == node)
+                return root;
             BPlusNode<K, V> parent = findParent(root.children.get(i), node);
-            if (parent != null) return parent;
+            if (parent != null)
+                return parent;
         }
-        
+
         return null;
     }
 
     private int findChildIndex(BPlusNode<K, V> parent, BPlusNode<K, V> child) {
         for (int i = 0; i < parent.children.size(); i++) {
-            if (parent.children.get(i) == child) return i;
+            if (parent.children.get(i) == child)
+                return i;
         }
         return -1;
     }
 
-    private void borrowFromLeft(BPlusNode<K, V> node, BPlusNode<K, V> leftSibling, 
-                              BPlusNode<K, V> parent, int parentIndex) {
+    private void borrowFromLeft(BPlusNode<K, V> node, BPlusNode<K, V> leftSibling,
+            BPlusNode<K, V> parent, int parentIndex) {
         node.keys.add(0, leftSibling.keys.remove(leftSibling.keys.size() - 1));
         node.values.add(0, leftSibling.values.remove(leftSibling.values.size() - 1));
         parent.keys.set(parentIndex, node.keys.get(0));
     }
 
-    private void borrowFromRight(BPlusNode<K, V> node, BPlusNode<K, V> rightSibling, 
-                               BPlusNode<K, V> parent, int parentIndex) {
+    private void borrowFromRight(BPlusNode<K, V> node, BPlusNode<K, V> rightSibling,
+            BPlusNode<K, V> parent, int parentIndex) {
         node.keys.add(rightSibling.keys.remove(0));
         node.values.add(rightSibling.values.remove(0));
         parent.keys.set(parentIndex, rightSibling.keys.get(0));
     }
 
-    private void mergeLeaves(BPlusNode<K, V> left, BPlusNode<K, V> right, 
-                           BPlusNode<K, V> parent, int parentIndex) {
+    private void mergeLeaves(BPlusNode<K, V> left, BPlusNode<K, V> right,
+            BPlusNode<K, V> parent, int parentIndex) {
         left.keys.addAll(right.keys);
         left.values.addAll(right.values);
         left.next = right.next;
-        
+
         parent.keys.remove(parentIndex);
         parent.children.remove(parentIndex + 1);
-        
+
         if (parent == root && parent.keys.isEmpty()) {
             root = left;
         }
