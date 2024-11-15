@@ -1,16 +1,16 @@
 package edu.smu.smusql.model;
+
 import java.util.*;
 
+import edu.smu.smusql.ErrorChecks.*;
 
-// Node class to represent a node in the B+ Tree
 class BPlusNode<K extends Comparable<K>, V> {
-    protected boolean isLeaf;
-    protected List<K> keys;
-    protected List<BPlusNode<K, V>> children;
-    protected BPlusNode<K, V> next; // For leaf node linking
-    protected List<V> values; // Only used in leaf nodes
+    boolean isLeaf;
+    List<K> keys;
+    List<V> values;
+    List<BPlusNode<K, V>> children;
+    BPlusNode<K, V> next;
 
-    // Constructor for internal node
     public BPlusNode(boolean isLeaf) {
         this.isLeaf = isLeaf;
         this.keys = new ArrayList<>();
@@ -23,248 +23,346 @@ class BPlusNode<K extends Comparable<K>, V> {
     }
 }
 
-// BPlusTree class that implements the B+ Tree structure
 public class BPlusTree<K extends Comparable<K>, V> {
-    private int order; // The maximum number of keys a node can hold
-    private BPlusNode<K, V> root; // Root node of the tree
+    private BPlusNode<K, V> root;
+    private final int order;
+    private int size;
 
-    // Constructor
     public BPlusTree(int order) {
         this.order = order;
-        this.root = new BPlusNode<>(true); // Initialize root as a leaf node
+        this.root = new BPlusNode<>(true);
+        this.size = 0;
     }
 
-    // Search for a key in the B+ Tree and return the corresponding value
-    public V search(K key) {
-        BPlusNode<K, V> currentNode = root;
-
-        // Traverse internal nodes until we reach a leaf node
-        while (!currentNode.isLeaf) {
-            int idx = Collections.binarySearch(currentNode.keys, key);
-            int childIndex = idx >= 0 ? idx + 1 : -(idx + 1);
-            currentNode = currentNode.children.get(childIndex);
-        }
-
-        // Perform a binary search on the leaf node's keys
-        int idx = Collections.binarySearch(currentNode.keys, key);
+    // Modified search function to return a list of values for a key (handles duplicates)
+    public List<V> search(K key) {
+        BPlusNode<K, V> leaf = findLeaf(key);
+        int idx = Collections.binarySearch(leaf.keys, key);
+        
+        // If key is found, return all associated values
         if (idx >= 0) {
-            return currentNode.values.get(idx); // Key found
-        } else {
-            return null; // Key not found
+            List<V> results = new ArrayList<>();
+            while (idx < leaf.keys.size() && leaf.keys.get(idx).compareTo(key) == 0) {
+                results.add(leaf.values.get(idx));
+                idx++;
+            }
+            return results;
         }
+        
+        return Collections.emptyList();  // Return empty list if the key is not found
+    }
+
+    public List<V> searchRangeInclusive(K start, K end) {
+        List<V> result = new ArrayList<>();
+        BPlusNode<K, V> leaf = findLeaf(start);
+        
+        while (leaf != null) {
+            for (int i = 0; i < leaf.keys.size(); i++) {
+                K key = leaf.keys.get(i);
+                if (key.compareTo(start) >= 0 && key.compareTo(end) <= 0) {
+                    result.add(leaf.values.get(i));
+                }
+                if (key.compareTo(end) > 0) {
+                    return result;
+                }
+            }
+            leaf = leaf.next;
+        }
+
+        return result;
+    }
+
+    public List<V> searchRangeExclusive(K start, K end) {
+        List<V> result = new ArrayList<>();
+        BPlusNode<K, V> leaf = findLeaf(start);
+        
+        while (leaf != null) {
+            for (int i = 0; i < leaf.keys.size(); i++) {
+                K key = leaf.keys.get(i);
+                if (key.compareTo(start) > 0 && key.compareTo(end) < 0) {
+                    result.add(leaf.values.get(i));
+                }
+                if (key.compareTo(end) > 0) {
+                    return result;
+                }
+            }
+            leaf = leaf.next;
+        }
+
+        return result;
     }
 
     public void insert(K key, V value) {
-        BPlusNode<K, V> currentNode = root;
+        if (root == null) {
+            root = new BPlusNode<>(true);
+        }
 
-        // If the root is full, split it
-        if (currentNode.keys.size() == order - 1) {
+        BPlusNode<K, V> leaf = findLeaf(key);
+        // Determine the correct index to insert the key using a linear search
+        int idx = 0;
+        while (idx < leaf.keys.size() && leaf.keys.get(idx).compareTo(key) <= 0) {
+            idx++;
+        }
+
+        // Insert the key and value at the found index
+        leaf.keys.add(idx, key);
+        leaf.values.add(idx, value);
+        size++;
+
+        if (leaf.keys.size() >= order) {
+            splitLeaf(leaf);
+        }
+    }
+
+    public boolean update(K key, V newValue) {
+        if (root == null) return false;
+    
+        BPlusNode<K, V> leaf = findLeaf(key);
+        int idx = Collections.binarySearch(leaf.keys, key);
+    
+        // If the key doesn't exist, return false
+        if (idx < 0) {
+            return false;
+        }
+    
+        // Update the value
+        leaf.values.set(idx, newValue);
+    
+        // If the leaf node is not the root and the size is smaller than the min threshold, we rebalance
+        if (leaf != root && leaf.keys.size() < (order / 2)) {
+            rebalanceLeaf(leaf);
+        }
+    
+        return true;
+    }
+
+    public boolean updateDuplicate(K oldKey, K newKey, V value) {
+        if (root == null) return false;
+    
+        BPlusNode<K, V> leaf = findLeaf(oldKey);
+        int idx = Collections.binarySearch(leaf.keys, oldKey);
+    
+        // If the key doesn't exist, return false
+        if (idx < 0) {
+            return false;
+        }
+
+        // Find the correct idx with corresponding value due to duplicate keys
+        while (idx < leaf.keys.size() && leaf.keys.get(idx) == oldKey && leaf.values.get(idx) != value) {
+            idx++;
+        }
+    
+        // Delete the current column and index
+        leaf.keys.remove(idx);
+        leaf.values.remove(idx);
+        size--;
+
+        if (leaf != root && leaf.keys.size() < (order / 2)) {
+            rebalanceLeaf(leaf);
+        }
+
+        if (root.keys.isEmpty() && !root.isLeaf) {
+            root = root.children.get(0);
+        }
+
+        // Insert the new column and index
+        insert(newKey, value);
+    
+        return true;
+    }
+
+    public boolean delete(K key) {
+        if (root == null) return false;
+
+        BPlusNode<K, V> leaf = findLeaf(key);
+        int idx = Collections.binarySearch(leaf.keys, key);
+        
+        if (idx < 0) return false;
+
+        leaf.keys.remove(idx);
+        leaf.values.remove(idx);
+        size--;
+
+        if (leaf != root && leaf.keys.size() < (order / 2)) {
+            rebalanceLeaf(leaf);
+        }
+
+        if (root.keys.isEmpty() && !root.isLeaf) {
+            root = root.children.get(0);
+        }
+
+        return true;
+    }
+
+    public boolean deleteDuplicate(K key, V value) {
+        if (root == null) return false;
+
+        BPlusNode<K, V> leaf = findLeaf(key);
+        int idx = Collections.binarySearch(leaf.keys, key);
+        
+        if (idx < 0) return false;
+
+        // Find the correct idx with corresponding value due to duplicate keys
+        while (idx < leaf.keys.size() && leaf.keys.get(idx) == key && leaf.values.get(idx) != value) {
+            idx++;
+        }
+
+        leaf.keys.remove(idx);
+        leaf.values.remove(idx);
+        size--;
+
+        if (leaf != root && leaf.keys.size() < (order / 2)) {
+            rebalanceLeaf(leaf);
+        }
+
+        if (root.keys.isEmpty() && !root.isLeaf) {
+            root = root.children.get(0);
+        }
+
+        return true;
+    }
+
+    private BPlusNode<K, V> findLeaf(K key) {
+        BPlusNode<K, V> node = root;
+        while (!node.isLeaf) {
+            int idx = Collections.binarySearch(node.keys, key);
+            if (idx < 0) idx = -(idx + 1);
+            else idx++;
+            node = node.children.get(idx);
+        }
+        return node;
+    }
+
+    private void splitLeaf(BPlusNode<K, V> leaf) {
+        int mid = leaf.keys.size() / 2;
+        BPlusNode<K, V> newLeaf = new BPlusNode<>(true);
+
+        newLeaf.keys = new ArrayList<>(leaf.keys.subList(mid, leaf.keys.size()));
+        newLeaf.values = new ArrayList<>(leaf.values.subList(mid, leaf.values.size()));
+        
+        leaf.keys.subList(mid, leaf.keys.size()).clear();
+        leaf.values.subList(mid, leaf.values.size()).clear();
+
+        newLeaf.next = leaf.next;
+        leaf.next = newLeaf;
+
+        insertInParent(leaf, newLeaf.keys.get(0), newLeaf);
+    }
+
+    private void insertInParent(BPlusNode<K, V> left, K key, BPlusNode<K, V> right) {
+        if (left == root) {
             BPlusNode<K, V> newRoot = new BPlusNode<>(false);
-            newRoot.children.add(root);
-            splitChild(newRoot, 0);
+            newRoot.keys.add(key);
+            newRoot.children.add(left);
+            newRoot.children.add(right);
             root = newRoot;
+            return;
         }
 
-        // Insert the key-value pair into the non-full node
-        insertNonFull(currentNode, key, value);
-    }
+        BPlusNode<K, V> parent = findParent(root, left);
+        int idx = Collections.binarySearch(parent.keys, key);
+        idx = -(idx + 1);
 
-    public V update(K key, V Value){
-        BPlusNode<K, V> currentNode = root;
-        // Traverse internal nodes until we reach a leaf node
-        while (!currentNode.isLeaf) {
-            int idx = Collections.binarySearch(currentNode.keys, key);
-            int childIndex = idx >= 0 ? idx + 1 : -(idx + 1);
-            currentNode = currentNode.children.get(childIndex);
-        }
+        parent.keys.add(idx, key);
+        parent.children.add(idx + 1, right);
 
-        // Perform a binary search on the leaf node's keys
-        int idx = Collections.binarySearch(currentNode.keys, key);
-        if (idx >= 0) {
-
-            currentNode.values.set(idx, Value); // Key found
-            return currentNode.values.get(idx);
-        } else {
-            return null; // Key not found
+        if (parent.keys.size() >= order) {
+            splitInternal(parent);
         }
     }
 
-    // Helper function to insert into a non-full node
-    private void insertNonFull(BPlusNode<K, V> node, K key, V value) {
-        if (node.isLeaf) {
-            // Insert the key-value pair into the leaf node
-            int idx = Collections.binarySearch(node.keys, key);
-            if (idx >= 0) {
-                // Key already exists, update the value
-                node.values.set(idx, value);
-            } else {
-                // Key doesn't exist, insert new key-value pair
-                int insertPosition = -(idx + 1);
-                node.keys.add(insertPosition, key);
-                node.values.add(insertPosition, value);
-            }
-        } else {
-            // Traverse down to the correct child
-            int idx = Collections.binarySearch(node.keys, key);
-            int childIndex = idx >= 0 ? idx + 1 : -(idx + 1);
-            BPlusNode<K, V> childNode = node.children.get(childIndex);
+    private void splitInternal(BPlusNode<K, V> node) {
+        int mid = node.keys.size() / 2;
+        K promoteKey = node.keys.get(mid);
+        
+        BPlusNode<K, V> newNode = new BPlusNode<>(false);
+        newNode.keys = new ArrayList<>(node.keys.subList(mid + 1, node.keys.size()));
+        newNode.children = new ArrayList<>(node.children.subList(mid + 1, node.children.size()));
+        
+        node.keys.subList(mid, node.keys.size()).clear();
+        node.children.subList(mid + 1, node.children.size()).clear();
 
-            // Split the child if it's full
-            if (childNode.keys.size() == order - 1) {
-                splitChild(node, childIndex);
-                if (key.compareTo(node.keys.get(childIndex)) > 0) {
-                    childNode = node.children.get(childIndex + 1);
-                }
-            }
-
-            insertNonFull(childNode, key, value);
-        }
+        insertInParent(node, promoteKey, newNode);
     }
 
-    // Split a full child node
-    private void splitChild(BPlusNode<K, V> parentNode, int childIndex) {
-        BPlusNode<K, V> fullChild = parentNode.children.get(childIndex);
-        BPlusNode<K, V> newChild = new BPlusNode<>(fullChild.isLeaf);
-
-        // Split the keys and children/values of the full node
-        int medianIndex = (order - 1) / 2;
-        K medianKey = fullChild.keys.get(medianIndex);
-
-        // Transfer the second half of keys/values to the new child
-        newChild.keys.addAll(fullChild.keys.subList(medianIndex + 1, fullChild.keys.size()));
-        fullChild.keys.subList(medianIndex, fullChild.keys.size()).clear();
-
-        if (fullChild.isLeaf) {
-            // Transfer values for leaf node
-            newChild.values.addAll(fullChild.values.subList(medianIndex + 1, fullChild.values.size()));
-            fullChild.values.subList(medianIndex, fullChild.values.size()).clear();
-            newChild.next = fullChild.next;
-            fullChild.next = newChild;
-        } else {
-            // Transfer children for internal node
-            newChild.children.addAll(fullChild.children.subList(medianIndex + 1, fullChild.children.size()));
-            fullChild.children.subList(medianIndex + 1, fullChild.children.size()).clear();
-        }
-
-        // Insert the median key into the parent node
-        parentNode.keys.add(childIndex, medianKey);
-        parentNode.children.add(childIndex + 1, newChild);
-    }
-
-    // Delete a key from the B+ Tree
-    public void delete(K key) {
-        delete(root, key);
-        if (!root.isLeaf && root.keys.isEmpty()) {
-            root = root.children.get(0); // Root has become empty, adjust the tree
-        }
-    }
-
-    private void delete(BPlusNode<K, V> node, K key) {
-        // If node is a leaf, remove the key
-        if (node.isLeaf) {
-            int idx = Collections.binarySearch(node.keys, key);
-            if (idx >= 0) {
-                node.keys.remove(idx);
-                node.values.remove(idx);
-            }
-        } else {
-            // Internal node: find the child containing the key
-            int idx = Collections.binarySearch(node.keys, key);
-            int childIndex = idx >= 0 ? idx + 1 : -(idx + 1);
-            BPlusNode<K, V> childNode = node.children.get(childIndex);
-
-            delete(childNode, key);
-
-            // Handle underflow (child has fewer than minimum keys)
-            if (childNode.keys.size() < (order - 1) / 2) {
-                handleUnderflow(node, childIndex);
-            }
-        }
-    }
-
-    // Handle node underflow by borrowing or merging
-    private void handleUnderflow(BPlusNode<K, V> parentNode, int childIndex) {
-        BPlusNode<K, V> underflowNode = parentNode.children.get(childIndex);
-
-        // Try borrowing from the left sibling
-        if (childIndex > 0) {
-            BPlusNode<K, V> leftSibling = parentNode.children.get(childIndex - 1);
-            if (leftSibling.keys.size() > (order - 1) / 2) {
-                underflowNode.keys.add(0, parentNode.keys.get(childIndex - 1));
-                parentNode.keys.set(childIndex - 1, leftSibling.keys.remove(leftSibling.keys.size() - 1));
-
-                if (underflowNode.isLeaf) {
-                    underflowNode.values.add(0, leftSibling.values.remove(leftSibling.values.size() - 1));
-                } else {
-                    underflowNode.children.add(0, leftSibling.children.remove(leftSibling.children.size() - 1));
-                }
+    private void rebalanceLeaf(BPlusNode<K, V> leaf) {
+        BPlusNode<K, V> parent = findParent(root, leaf);
+        int idx = findChildIndex(parent, leaf);
+        
+        // Try borrowing from left sibling
+        if (idx > 0) {
+            BPlusNode<K, V> leftSibling = parent.children.get(idx - 1);
+            if (leftSibling.keys.size() > order / 2) {
+                borrowFromLeft(leaf, leftSibling, parent, idx - 1);
                 return;
             }
         }
 
-        // Try borrowing from the right sibling
-        if (childIndex < parentNode.children.size() - 1) {
-            BPlusNode<K, V> rightSibling = parentNode.children.get(childIndex + 1);
-            if (rightSibling.keys.size() > (order - 1) / 2) {
-                underflowNode.keys.add(parentNode.keys.get(childIndex));
-                parentNode.keys.set(childIndex, rightSibling.keys.remove(0));
-
-                if (underflowNode.isLeaf) {
-                    underflowNode.values.add(rightSibling.values.remove(0));
-                } else {
-                    underflowNode.children.add(rightSibling.children.remove(0));
-                }
+        // Try borrowing from right sibling
+        if (idx < parent.children.size() - 1) {
+            BPlusNode<K, V> rightSibling = parent.children.get(idx + 1);
+            if (rightSibling.keys.size() > order / 2) {
+                borrowFromRight(leaf, rightSibling, parent, idx);
                 return;
             }
         }
 
-        // If borrowing is not possible, merge with a sibling
-        if (childIndex > 0) {
-            // Merge with left sibling
-            BPlusNode<K, V> leftSibling = parentNode.children.get(childIndex - 1);
-            leftSibling.keys.add(parentNode.keys.remove(childIndex - 1));
-            leftSibling.keys.addAll(underflowNode.keys);
-
-            if (underflowNode.isLeaf) {
-                leftSibling.values.addAll(underflowNode.values);
-                leftSibling.next = underflowNode.next;
-            } else {
-                leftSibling.children.addAll(underflowNode.children);
-            }
-
-            parentNode.children.remove(childIndex);
+        // Merge with a sibling
+        if (idx > 0) {
+            mergeLeaves(parent.children.get(idx - 1), leaf, parent, idx - 1);
         } else {
-            // Merge with right sibling
-            BPlusNode<K, V> rightSibling = parentNode.children.get(childIndex + 1);
-            underflowNode.keys.add(parentNode.keys.remove(childIndex));
-            underflowNode.keys.addAll(rightSibling.keys);
-
-            if (underflowNode.isLeaf) {
-                underflowNode.values.addAll(rightSibling.values);
-                underflowNode.next = rightSibling.next;
-            } else {
-                underflowNode.children.addAll(rightSibling.children);
-            }
-
-            parentNode.children.remove(childIndex + 1);
+            mergeLeaves(leaf, parent.children.get(idx + 1), parent, idx);
         }
     }
 
-    // Optional: In-order traversal of B+ Tree (for debugging purposes)
-    public void traverse() {
-        BPlusNode<K, V> currentNode = root;
-        while (!currentNode.isLeaf) {
-            currentNode = currentNode.children.get(0); // Traverse to the first leaf node
+    private BPlusNode<K, V> findParent(BPlusNode<K, V> root, BPlusNode<K, V> node) {
+        if (root == null || root.isLeaf) return null;
+        
+        for (int i = 0; i < root.children.size(); i++) {
+            if (root.children.get(i) == node) return root;
+            BPlusNode<K, V> parent = findParent(root.children.get(i), node);
+            if (parent != null) return parent;
         }
-        while (currentNode != null) {
-            for (int i = 0; i < currentNode.keys.size(); i++) {
-                Map<String, Object> record = (Map<String, Object>) currentNode.values.get(i);
+        
+        return null;
+    }
 
-                System.out.println("Index: " + currentNode.keys.get(i) +
-                        ", Name: " + record.get("name") +
-                        ", Age: " + record.get("age"));
-            }
-            currentNode = currentNode.next; // Move to the next leaf node
+    private int findChildIndex(BPlusNode<K, V> parent, BPlusNode<K, V> child) {
+        for (int i = 0; i < parent.children.size(); i++) {
+            if (parent.children.get(i) == child) return i;
         }
+        return -1;
+    }
+
+    private void borrowFromLeft(BPlusNode<K, V> node, BPlusNode<K, V> leftSibling, 
+                              BPlusNode<K, V> parent, int parentIndex) {
+        node.keys.add(0, leftSibling.keys.remove(leftSibling.keys.size() - 1));
+        node.values.add(0, leftSibling.values.remove(leftSibling.values.size() - 1));
+        parent.keys.set(parentIndex, node.keys.get(0));
+    }
+
+    private void borrowFromRight(BPlusNode<K, V> node, BPlusNode<K, V> rightSibling, 
+                               BPlusNode<K, V> parent, int parentIndex) {
+        node.keys.add(rightSibling.keys.remove(0));
+        node.values.add(rightSibling.values.remove(0));
+        parent.keys.set(parentIndex, rightSibling.keys.get(0));
+    }
+
+    private void mergeLeaves(BPlusNode<K, V> left, BPlusNode<K, V> right, 
+                           BPlusNode<K, V> parent, int parentIndex) {
+        left.keys.addAll(right.keys);
+        left.values.addAll(right.values);
+        left.next = right.next;
+        
+        parent.keys.remove(parentIndex);
+        parent.children.remove(parentIndex + 1);
+        
+        if (parent == root && parent.keys.isEmpty()) {
+            root = left;
+        }
+    }
+
+    public int size() {
+        return size;
     }
 }

@@ -5,7 +5,9 @@ import java.util.List;
 
 public class TypeConverter {
 
-    public TypeConverter() {}
+    public TypeConverter() {
+        // Empty constructor
+    }
 
     public static List<Object> convertParams(List<Object> params) {
         List<Object> convertedParameters = new ArrayList<>();

@@ -1,230 +1,222 @@
 package edu.smu.smusql;
 
+import edu.smu.smusql.model.Table;
 import java.util.*;
-import edu.smu.smusql.model.Table2;
+import java.util.regex.*;
 
 public class Engine {
-    private Database db = new Database();
+    private Database database;
 
-    /**
-     * Executes an SQL query by parsing and dispatching it to the appropriate method.
-     *
-     * @param query The SQL query to execute.
-     * @return Result message from the executed command.
-     */
+    public Engine() {
+        this.database = new Database();
+    }
+
     public String executeSQL(String query) {
-        String[] tokens = query.trim().split("\\s+");
+        String[] tokens = query.trim().split("\\s+", 2);
+        if (tokens.length == 0) return "ERROR: Empty query";
+        
         String command = tokens[0].toUpperCase();
+        String rest = tokens.length > 1 ? tokens[1] : "";
 
-        return switch (command) {
-            case "CREATE" -> create(tokens);
-            case "INSERT" -> insert(tokens);
-            case "SELECT" -> select(tokens);
-            case "UPDATE" -> update(tokens);
-            case "DELETE" -> delete(tokens);
-            default -> "ERROR: Unknown command";
-        };
+        switch (command) {
+            case "CREATE":
+                return create(rest);
+            case "INSERT":
+                return insert(rest);
+            case "SELECT":
+                return select(rest);
+            case "UPDATE":
+                return update(rest);
+            case "DELETE":
+                return delete(rest);
+            default:
+                return "ERROR: Unknown command: " + command;
+        }
     }
 
-    /**
-     * Creates a new table based on the parsed command.
-     *
-     * @param tokens The tokens from the CREATE statement.
-     * @return Result message indicating success or error.
-     */
-    private String create(String[] tokens) {
-        try {
-            List<String> parsedCommand = Parser.parseCreate(tokens);
-            String tableName = parsedCommand.get(0);
+    public String create(String query) {
+        // CREATE TABLE table_name (field1, field2, ...)
+        Pattern pattern = Pattern.compile("TABLE\\s+(\\w+)\\s*\\((.+)\\)");
+        Matcher matcher = pattern.matcher(query);
+        
+        if (!matcher.find()) {
+            return "ERROR: Invalid CREATE syntax";
+        }
 
-            if (db.doesTableExist(tableName)) {
-                return "ERROR: Table already exists";
-            }
-            db.createTable(tableName, parsedCommand.subList(1, parsedCommand.size()));
-            return "Table created successfully";
+        String tableName = matcher.group(1);
+        String[] fields = matcher.group(2).split(",\\s*");
+        List<String> fieldList = Arrays.asList(fields);
+
+        try {
+            database.createTable(tableName, fieldList);
+            return "Table " + tableName + " created successfully";
         } catch (Exception e) {
             return "ERROR: " + e.getMessage();
         }
     }
 
-    /**
-     * Inserts a record into a specified table.
-     *
-     * @param tokens The tokens from the INSERT statement.
-     * @return Result message indicating success or error.
-     */
-    private String insert(String[] tokens) {
-        try {
-            List<Object> parsedCommand = Parser.parseInsert(tokens);
-            String tableName = (String) parsedCommand.get(0);
-
-            if (!db.doesTableExist(tableName)) {
-                return "ERROR: Table does not exist";
-            }
-            if (!db.getTable(tableName).insertRecord(parsedCommand.subList(1, parsedCommand.size()))) {
-                return "ERROR: Failed to insert record";
-            }
-            return "Record inserted successfully";
-        } catch (Exception e) {
-            return "ERROR: " + e.getMessage();
+    public String insert(String query) {
+        // INSERT INTO table_name VALUES (value1, value2, ...)
+        Pattern pattern = Pattern.compile("INTO\\s+(\\w+)\\s+VALUES\\s*\\((.+)\\)");
+        Matcher matcher = pattern.matcher(query);
+        
+        if (!matcher.find()) {
+            return "ERROR: Invalid INSERT syntax";
         }
-    }
 
-    /**
-     * Selects records from a specified table based on conditions.
-     *
-     * @param tokens The tokens from the SELECT statement.
-     * @return Formatted string of selected records or error message.
-     */
-    private String select(String[] tokens) {
-        try {
-            List<Object> parsedCommand = Parser.parseSelectConditions(String.join(" ", tokens));
-            String tableName = (String) parsedCommand.get(0);
+        String tableName = matcher.group(1);
+        String[] valueStrings = matcher.group(2).split(",\\s*");
+        
+        Table table = database.getTable(tableName);
+        if (table == null) {
+            return "ERROR: Table " + tableName + " does not exist";
+        }
 
-            if (!db.doesTableExist(tableName)) {
-                return "ERROR: Table does not exist";
-            }
-
-            Table2 table = db.getTable(tableName);
-            List<Map<String, Object>> allRows = table.getRecords();
-
-            // If there are conditions to evaluate
-            if (parsedCommand.size() > 1) {
-                List<String> conditions = (List<String>) parsedCommand.get(1);
-
-                // Join the conditions for use in the Table2 class
-                String combinedCondition = String.join(" ", conditions);
-                List<Integer> selectedKeys = table.selectRecords(combinedCondition); // Use existing method
-                List<Map<String, Object>> filteredRows = selectedKeys.stream()
-                        .map(table::selectRecord)
-                        .toList();
-
-                return formatRows(filteredRows);
+        List<Object> values = new ArrayList<>();
+        for (String value : valueStrings) {
+            // Remove quotes from string values
+            value = value.trim().replaceAll("^'|'$", "");
+            
+            // Convert value to appropriate type
+            if (value.equalsIgnoreCase("true") || value.equalsIgnoreCase("false")) {
+                values.add(Boolean.parseBoolean(value));
             } else {
-                return formatRows(allRows);
+                try {
+                    // Try parsing as number
+                    if (value.contains(".")) {
+                        values.add(Double.parseDouble(value));
+                    } else {
+                        values.add(Integer.parseInt(value));
+                    }
+                } catch (NumberFormatException e) {
+                    // If parsing fails, treat as string
+                    values.add(value);
+                }
             }
+        }
+
+        try {
+            table.insertRecord(values);
+            return "1 row inserted successfully";
         } catch (Exception e) {
             return "ERROR: " + e.getMessage();
         }
     }
 
-    /**
-     * Formats the rows of selected records into a string.
-     *
-     * @param rows The list of rows to format.
-     * @return Formatted string representation of the rows.
-     */
-    private String formatRows(List<Map<String, Object>> rows) {
-        StringBuilder sb = new StringBuilder();
-        for (Map<String, Object> row : rows) {
-            sb.append(row.toString()).append("\n");
+    public String select(String query) {
+        // SELECT * FROM table_name [WHERE condition]
+        Pattern pattern = Pattern.compile("\\*\\s+FROM\\s+(\\w+)(?:\\s+WHERE\\s+(.+))?");
+        Matcher matcher = pattern.matcher(query);
+        
+        if (!matcher.find()) {
+            return "ERROR: Invalid SELECT syntax";
         }
-        return sb.toString();
-    }
 
-    /**
-     * Updates records in a specified table based on a condition.
-     *
-     * @param tokens The tokens from the UPDATE statement.
-     * @return Result message indicating success or error.
-     */
-    private String update(String[] tokens) {
+        String tableName = matcher.group(1);
+        String condition = matcher.group(2); // May be null if no WHERE clause
+
+        Table table = database.getTable(tableName);
+        if (table == null) {
+            return "ERROR: Table " + tableName + " does not exist";
+        }
+
         try {
-            List<Object> parsedCommand = Parser.parseUpdate(String.join(" ", tokens));
-            String tableName = (String) parsedCommand.get(0); // Cast to String
-            Map<String, Object> updatedValues = (Map<String, Object>) parsedCommand.get(1); // Cast to Map
-            String condition = (String) parsedCommand.get(2); // Cast to String
-
-            if (!db.doesTableExist(tableName)) {
-                return "ERROR: Table does not exist";
+            List<Integer> keys;
+            if (condition == null) {
+                // If no condition, get all records
+                keys = table.selectRecords("id >= 0");
+            } else {
+                keys = table.selectRecords(condition);
             }
 
-            Table2 table = db.getTable(tableName);
-            // Update records based on the specified condition
-            int rowsUpdated = table.updateRecords(condition, updatedValues);
-
-            return rowsUpdated + " row(s) updated.";
+            StringBuilder result = new StringBuilder();
+            for (Integer key : keys) {
+                Map<String, Object> record = table.selectRecord(key);
+                result.append(record.toString()).append("\n");
+            }
+            
+            return result.toString();
         } catch (Exception e) {
             return "ERROR: " + e.getMessage();
         }
     }
 
-    /**
-     * Deletes records from a specified table based on a condition.
-     *
-     * @param tokens The tokens from the DELETE statement.
-     * @return Result message indicating success or error.
-     */
-    private String delete(String[] tokens) {
-        try {
-            List<String> parsedCommand = Parser.parseDelete(String.join(" ", tokens));
-            String tableName = parsedCommand.get(0); // Get the table name
-            String condition = parsedCommand.get(1); // Get the condition
+    public String update(String query) {
+        // UPDATE table_name SET field = value WHERE condition
+        Pattern pattern = Pattern.compile("(\\w+)\\s+SET\\s+(.+?)\\s+WHERE\\s+(.+)");
+        Matcher matcher = pattern.matcher(query);
+        
+        if (!matcher.find()) {
+            return "ERROR: Invalid UPDATE syntax";
+        }
 
-            if (!db.doesTableExist(tableName)) {
-                return "ERROR: Table does not exist"; // Check if the table exists
+        String tableName = matcher.group(1);
+        String setClause = matcher.group(2);
+        String condition = matcher.group(3);
+
+        Table table = database.getTable(tableName);
+        if (table == null) {
+            return "ERROR: Table " + tableName + " does not exist";
+        }
+
+        // Parse SET clause
+        String[] setParts = setClause.split("=");
+        if (setParts.length != 2) {
+            return "ERROR: Invalid SET clause";
+        }
+
+        String field = setParts[0].trim();
+        String valueStr = setParts[1].trim();
+        
+        // Convert value to appropriate type
+        Object value;
+        if (valueStr.equalsIgnoreCase("true") || valueStr.equalsIgnoreCase("false")) {
+            value = Boolean.parseBoolean(valueStr);
+        } else {
+            try {
+                if (valueStr.contains(".")) {
+                    value = Double.parseDouble(valueStr);
+                } else {
+                    value = Integer.parseInt(valueStr);
+                }
+            } catch (NumberFormatException e) {
+                value = valueStr.replaceAll("^'|'$", ""); // Remove quotes if present
             }
+        }
 
-            Table2 table = db.getTable(tableName); // Retrieve the table instance
-            // Perform the delete operation based on the specified condition
-            int rowsDeleted = table.deleteRecords(condition);
+        Map<String, Object> updateValues = new HashMap<>();
+        updateValues.put(field, value);
 
-            return rowsDeleted + " row(s) deleted."; // Print the number of rows deleted
+        try {
+            int updatedRows = table.updateRecords(condition, updateValues);
+            return updatedRows + " row(s) updated successfully";
         } catch (Exception e) {
-            return "ERROR: " + e.getMessage(); // Handle exceptions
+            return "ERROR: " + e.getMessage();
         }
     }
 
-    // TEST
-    private Map<String, String[]> tables = new HashMap<>(); // Store table structure
-    
-    public boolean doesTableExist(String tableName) {
-        return tables.containsKey(tableName);
-    }
+    public String delete(String query) {
+        // DELETE FROM table_name WHERE condition
+        Pattern pattern = Pattern.compile("FROM\\s+(\\w+)\\s+WHERE\\s+(.+)");
+        Matcher matcher = pattern.matcher(query);
+        
+        if (!matcher.find()) {
+            return "ERROR: Invalid DELETE syntax";
+        }
 
-    public static void main(String[] args) {
-        System.out.println("Running tests...");
+        String tableName = matcher.group(1);
+        String condition = matcher.group(2);
 
-        Engine engine = new Engine();
+        Table table = database.getTable(tableName);
+        if (table == null) {
+            return "ERROR: Table " + tableName + " does not exist";
+        }
 
-        // Test: Create table - Success
-        String createTableQuery = "CREATE TABLE users (id INT, name VARCHAR(50))";
-        String createTableResult = engine.executeSQL(createTableQuery);
-        assert createTableResult.equals("Table created successfully") : "Test failed: Create Table";
-
-        // Verify table creation
-        assert engine.doesTableExist("users") : "Test failed: Table 'users' does not exist after creation";
-
-        // Test: Insert record - Success
-        String insertRecordQuery = "INSERT INTO users VALUES (1, 'John Doe')";
-        String insertRecordResult = engine.executeSQL(insertRecordQuery);
-        assert insertRecordResult.equals("Record inserted successfully") : "Test failed: Insert Record";
-
-        // Test: Select records - Success
-        String selectQuery = "SELECT * FROM users";
-        String selectResult = engine.executeSQL(selectQuery);
-        assert selectResult.contains("John Doe") : "Test failed: Select Records";
-
-        // Test: Update record - Success
-        String updateQuery = "UPDATE users SET name = 'Jane Doe' WHERE id = 1";
-        String updateResult = engine.executeSQL(updateQuery);
-        assert updateResult.equals("1 row(s) updated.") : "Test failed: Update Record";
-
-        // Test: Delete record - Success
-        String deleteQuery = "DELETE FROM users WHERE id = 1";
-        String deleteResult = engine.executeSQL(deleteQuery);
-        assert deleteResult.equals("1 row(s) deleted.") : "Test failed: Delete Record";
-
-        // Test: Insert record - Table does not exist
-        String nonExistentInsertQuery = "INSERT INTO nonexistent_table VALUES (1, 'John Doe')";
-        String nonExistentInsertResult = engine.executeSQL(nonExistentInsertQuery);
-        assert nonExistentInsertResult.equals("ERROR: Table does not exist") : "Test failed: Insert into Non-Existent Table";
-
-        // Test: Unknown command
-        String unknownCommandQuery = "DROP TABLE users";
-        String unknownCommandResult = engine.executeSQL(unknownCommandQuery);
-        assert unknownCommandResult.equals("ERROR: Unknown command") : "Test failed: Unknown Command";
-
-        System.out.println("All tests passed.");
+        try {
+            int deletedRows = table.deleteRecords(condition);
+            return deletedRows + " row(s) deleted successfully";
+        } catch (Exception e) {
+            return "ERROR: " + e.getMessage();
+        }
     }
 }
